@@ -159,6 +159,12 @@ gh pr create --title "feat(scope): brief description" --body "$(cat <<'EOF'
 
 Closes #<issue_number>
 
+## Fable validation
+Verdict: <PASS | PASS WITH NOTES>. Not verified: <list>.
+
+## Accepted risks
+<risks from the validator you did not fix, or "none">
+
 ## Test plan
 - [ ] Scenario 1
 - [ ] Scenario 2
@@ -178,6 +184,7 @@ If you typed `` \` `` anywhere in the body, delete the backslash. The single-quo
 - [ ] `bun run build` produces a clean dist/.
 - [ ] No hand-rolled HTTP — uses the SDK.
 - [ ] `fable-validator` verdict is PASS or PASS WITH NOTES (Phase 6.5), and it is in the PR body.
+- [ ] Accepted risks (if any) are listed in the PR body.
 - [ ] PR created with description.
 
 ## Karpathy guidelines (always)
