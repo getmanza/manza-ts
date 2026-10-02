@@ -1,6 +1,6 @@
 {
   "name": "@getzazu/sdk",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "TypeScript SDK for the Zazu API. Runtime-agnostic (Node, Bun, Deno, browsers, Cloudflare Workers).",
   "type": "module",
   "main": "./dist/index.cjs",
