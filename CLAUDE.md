@@ -1,6 +1,6 @@
-# @getzazu/sdk
+# @manza/sdk
 
-TypeScript SDK for the Zazu API. Runtime-agnostic — runs on Node 20+, Bun, Deno, browsers, and Cloudflare Workers using native `fetch`.
+TypeScript SDK for the Manza API. Runtime-agnostic — runs on Node 20+, Bun, Deno, browsers, and Cloudflare Workers using native `fetch`.
 
 ## Stack
 
@@ -11,22 +11,22 @@ TypeScript SDK for the Zazu API. Runtime-agnostic — runs on Node 20+, Bun, Den
 | Lint + format | Biome 2.x | `biome.json`. Replaces eslint + prettier |
 | Type-check | `tsc --noEmit` | Bun doesn't do this; we keep tsc for it |
 | HTTP | Native `fetch` + `AbortController` | No undici / node-fetch fallback |
-| Cassette replay (tests) | msw + `js-yaml` | Reads zazu-ruby's release tarball |
-| Release | `bin/release` | zazu SDK release kit (byte-identical across SDK repos; repo-specific bits in `scripts/version` + `scripts/release-check`); OIDC trusted publishing |
+| Cassette replay (tests) | msw + `js-yaml` | Reads manza-ruby's release tarball |
+| Release | `bin/release` | manza SDK release kit (byte-identical across SDK repos; repo-specific bits in `scripts/version` + `scripts/release-check`); OIDC trusted publishing |
 
 ## Public API surface
 
-Mirrors `zazu-ruby` one-to-one:
+Mirrors `manza-ruby` one-to-one:
 
-- `Zazu` client, six resources: `accounts`, `customers`, `entity`, `invoices`, `paymentLinks`, `webhookEndpoints`
+- `Manza` client, ten resources: `accounts`, `beneficiaries`, `checkoutSessions`, `customers`, `entity`, `invoices`, `payeeTrustRequests`, `paymentLinks`, `transferDrafts`, `webhookEndpoints`
 - Cursor-based `Page<T>` with async iterator (`page.records()`)
-- 9-class `ZazuError` hierarchy — discriminate via `instanceof`, never status-code matching
+- 10-class `ManzaError` hierarchy — discriminate via `instanceof`, never status-code matching
 - Wire-format response bodies are returned as-is (snake_case keys). **No auto-camelCasing.**
 
 ## How to work in this codebase
 
 1. **Tests come first.** Every change to `src/` ships with a test. Cassette-replay tests are the contract — they enforce the same wire-format across Ruby, TS, and future SDKs.
-2. **Use the SDK's primitives.** `Page<T>`, `ZazuError` subclasses, `fixture_id()` helper. Don't hand-roll fetch loops or parse `error.message`.
+2. **Use the SDK's primitives.** `Page<T>`, `ManzaError` subclasses, `fixture_id()` helper. Don't hand-roll fetch loops or parse `error.message`.
 3. **Snake-case stays.** Response keys are wire-format. We don't camelCase them on the way out.
 4. **Lint must be green.** `bun run lint` runs Biome with `--error-on-warnings`. Don't add `// biome-ignore` to silence — fix the issue.
 
@@ -34,10 +34,10 @@ Mirrors `zazu-ruby` one-to-one:
 
 - **Bun for tooling, not Node.** Local dev, CI, build, test — all Bun. Node is supported as a *runtime* target for the published package, not as a dev dependency.
 - **`bun run check:all` before every commit.** Runs typecheck + lint + test. CI runs the same commands.
-- **No long-lived `NPM_TOKEN`.** Releases publish via npm OIDC trusted publishing through the `release` GitHub environment. Verify the binding on https://www.npmjs.com/package/@getzazu/sdk/access if it ever drifts.
-- **Cassettes come from zazu-ruby.** `bun run fetch:cassettes` downloads the tarball. The Ruby SDK records, every other SDK replays.
+- **No long-lived `NPM_TOKEN`.** Releases publish via npm OIDC trusted publishing through the `release` GitHub environment. Verify the binding on https://www.npmjs.com/package/@manza/sdk/access if it ever drifts.
+- **Cassettes come from manza-ruby.** `bun run fetch:cassettes` downloads the tarball. The Ruby SDK records, every other SDK replays.
 - **Snake-case wire format.** API request/response bodies use snake_case. Don't transform them.
-- **No new error classes without updating zazu-ruby.** The 9-class hierarchy is shared across SDKs. Adding to it means coordinating both repos.
+- **No new error classes without updating manza-ruby.** The 10-class hierarchy is shared across SDKs. Adding to it means coordinating both repos.
 - **Never escape backticks in PR bodies.** With `<<'EOF'` (single-quoted heredoc) the shell passes everything through verbatim — typing `` \` `` produces literal `` \` `` in the rendered PR. See "PR descriptions" below.
 
 ## PR descriptions
@@ -148,17 +148,17 @@ These live in `.claude/commands/` and are available in any Claude Code session:
 
 ## Cross-SDK contract
 
-`zazu-ruby` is the reference implementation:
+`manza-ruby` is the reference implementation:
 
-- Records cassettes against `staging.zazu.ma`
+- Records cassettes against `staging.manza.ma`
 - Ships them as a release tarball (`cassettes-vX.Y.Z.tar.gz`) on each version
-- All other SDKs (`zazu-ts`, future `zazu-python`, `zazu-go`, `zazu-php`, `zazu-crystal`, `zazu-elixir`, `zazu-rust`) replay these cassettes in their own test harness
+- All other SDKs (`manza-ts`, future `manza-python`, `manza-go`, `manza-php`, `manza-crystal`, `manza-elixir`, `manza-rust`) replay these cassettes in their own test harness
 
-If the contract breaks (e.g., new request shape), it's a coordinated change across at least two repos: zazu-ruby and zazu-ts.
+If the contract breaks (e.g., new request shape), it's a coordinated change across at least two repos: manza-ruby and manza-ts.
 
 ## Repository links
 
-- Ruby SDK (reference): https://github.com/getzazu/zazu-ruby
-- This repo: https://github.com/getzazu/zazu-ts
-- npm package: https://www.npmjs.com/package/@getzazu/sdk
-- CLI consumer: https://github.com/getzazu/cli
+- Ruby SDK (reference): https://github.com/getmanza/manza-ruby
+- This repo: https://github.com/getmanza/manza-ts
+- npm package: https://www.npmjs.com/package/@manza/sdk
+- CLI consumer: https://github.com/getmanza/cli

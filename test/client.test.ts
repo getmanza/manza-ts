@@ -1,29 +1,46 @@
-import { describe, expect, test } from "bun:test";
-import { Zazu, ZazuConfigurationError } from "../src/index.js";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { Manza, ManzaConfigurationError } from "../src/index.js";
 
-describe("Zazu", () => {
-  test("requires an apiKey", () => {
-    const original = process.env.ZAZU_API_KEY;
-    delete process.env.ZAZU_API_KEY;
-    try {
-      expect(() => new Zazu()).toThrow(ZazuConfigurationError);
-    } finally {
-      if (original !== undefined) process.env.ZAZU_API_KEY = original;
+// The client reads MANZA_* and falls back to ZAZU_*; clear both so a
+// developer's shell can't leak into these defaults.
+const ENV_NAMES = ["API_KEY", "BASE_URL", "API_VERSION", "TIMEOUT_MS"].flatMap((n) => [
+  `MANZA_${n}`,
+  `ZAZU_${n}`,
+]);
+
+describe("Manza", () => {
+  const saved: Record<string, string | undefined> = {};
+
+  beforeEach(() => {
+    for (const name of ENV_NAMES) {
+      saved[name] = process.env[name];
+      delete process.env[name];
     }
   });
 
+  afterEach(() => {
+    for (const name of ENV_NAMES) {
+      if (saved[name] === undefined) delete process.env[name];
+      else process.env[name] = saved[name];
+    }
+  });
+
+  test("requires an apiKey", () => {
+    expect(() => new Manza()).toThrow(ManzaConfigurationError);
+  });
+
   test("strips trailing slash from baseUrl", () => {
-    const z = new Zazu({ apiKey: "test", baseUrl: "https://staging.zazu.ma///" });
-    expect(z.baseUrl).toBe("https://staging.zazu.ma");
+    const z = new Manza({ apiKey: "test", baseUrl: "https://staging.manza.example///" });
+    expect(z.baseUrl).toBe("https://staging.manza.example");
   });
 
   test("defaults baseUrl to Morocco production (ma.manza.finance)", () => {
-    const z = new Zazu({ apiKey: "test" });
+    const z = new Manza({ apiKey: "test" });
     expect(z.baseUrl).toBe("https://ma.manza.finance");
   });
 
   test("exposes every resource", () => {
-    const z = new Zazu({ apiKey: "test" });
+    const z = new Manza({ apiKey: "test" });
     expect(z.accounts).toBeDefined();
     expect(z.beneficiaries).toBeDefined();
     expect(z.checkoutSessions).toBeDefined();

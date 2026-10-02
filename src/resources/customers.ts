@@ -1,7 +1,7 @@
-// Mirrors lib/zazu/resources/customers.rb.
+// Mirrors lib/manza/resources/customers.rb.
 
 import type { Page } from "../page.js";
-import type { ZazuResponse } from "../response.js";
+import type { ManzaResponse } from "../response.js";
 import { type ListParams, ResourceBase } from "./base.js";
 
 export interface CustomerListParams extends ListParams {
@@ -14,19 +14,19 @@ export class Customers extends ResourceBase {
     return this.listPage("api/customers", rest, { limit, cursor });
   }
 
-  get(id: string): Promise<ZazuResponse> {
+  get(id: string): Promise<ManzaResponse> {
     return this.httpGet(this.encodePath("api/customers", id));
   }
 
-  create(attributes: Record<string, unknown>): Promise<ZazuResponse> {
+  create(attributes: Record<string, unknown>): Promise<ManzaResponse> {
     return this.httpPost("api/customers", attributes);
   }
 
-  update(id: string, attributes: Record<string, unknown>): Promise<ZazuResponse> {
+  update(id: string, attributes: Record<string, unknown>): Promise<ManzaResponse> {
     return this.httpPatch(this.encodePath("api/customers", id), attributes);
   }
 
-  delete(id: string): Promise<ZazuResponse> {
+  delete(id: string): Promise<ManzaResponse> {
     return this.httpDelete(this.encodePath("api/customers", id));
   }
 }

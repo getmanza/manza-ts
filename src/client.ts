@@ -1,18 +1,19 @@
-// Mirrors lib/zazu/client.rb. Runtime-agnostic HTTP entry point that
+// Mirrors lib/manza/client.rb. Runtime-agnostic HTTP entry point that
 // uses the global `fetch` (Node 20+, Bun, Deno, browsers, Workers).
 
+import { readEnv } from "./env.js";
 import {
-  ZazuAuthenticationError,
-  ZazuConfigurationError,
-  ZazuConflictError,
-  ZazuConnectionError,
-  type ZazuError,
-  ZazuError as ZazuErrorBase,
-  ZazuForbiddenError,
-  ZazuNotFoundError,
-  ZazuRateLimitError,
-  ZazuServerError,
-  ZazuValidationError,
+  ManzaAuthenticationError,
+  ManzaConfigurationError,
+  ManzaConflictError,
+  ManzaConnectionError,
+  type ManzaError,
+  ManzaError as ManzaErrorBase,
+  ManzaForbiddenError,
+  ManzaNotFoundError,
+  ManzaRateLimitError,
+  ManzaServerError,
+  ManzaValidationError,
 } from "./errors.js";
 import { Accounts } from "./resources/accounts.js";
 import { Beneficiaries } from "./resources/beneficiaries.js";
@@ -24,10 +25,10 @@ import { PayeeTrustRequests } from "./resources/payee_trust_requests.js";
 import { PaymentLinks } from "./resources/payment_links.js";
 import { TransferDrafts } from "./resources/transfer_drafts.js";
 import { WebhookEndpoints } from "./resources/webhook_endpoints.js";
-import { ZazuResponse } from "./response.js";
+import { ManzaResponse } from "./response.js";
 import { VERSION } from "./version.js";
 
-export interface ZazuClientOptions {
+export interface ManzaClientOptions {
   apiKey?: string | undefined;
   baseUrl?: string;
   apiVersion?: string | undefined;
@@ -44,9 +45,9 @@ export interface RequestOptions {
 // Morocco production. South Africa: https://za.manza.finance.
 const DEFAULT_BASE_URL = "https://ma.manza.finance";
 const DEFAULT_TIMEOUT_MS = 30_000;
-const USER_AGENT = `zazu-ts/${VERSION}`;
+const USER_AGENT = `manza-ts/${VERSION}`;
 
-export class Zazu {
+export class Manza {
   readonly apiKey: string;
   readonly baseUrl: string;
   readonly apiVersion: string | null;
@@ -64,19 +65,15 @@ export class Zazu {
   readonly transferDrafts: TransferDrafts;
   readonly webhookEndpoints: WebhookEndpoints;
 
-  constructor(options: ZazuClientOptions = {}) {
-    const apiKey = options.apiKey ?? readEnv("ZAZU_API_KEY");
+  constructor(options: ManzaClientOptions = {}) {
+    const apiKey = options.apiKey ?? readEnv("API_KEY");
     if (!apiKey) {
-      throw new ZazuConfigurationError("Missing apiKey. Pass apiKey or set ZAZU_API_KEY.");
+      throw new ManzaConfigurationError("Missing apiKey. Pass apiKey or set MANZA_API_KEY.");
     }
     this.apiKey = apiKey;
-    this.baseUrl = (options.baseUrl ?? readEnv("ZAZU_BASE_URL") ?? DEFAULT_BASE_URL).replace(
-      /\/+$/,
-      "",
-    );
-    this.apiVersion = options.apiVersion ?? readEnv("ZAZU_API_VERSION") ?? null;
-    this.timeoutMs =
-      options.timeoutMs ?? (Number(readEnv("ZAZU_TIMEOUT_MS")) || DEFAULT_TIMEOUT_MS);
+    this.baseUrl = (options.baseUrl ?? readEnv("BASE_URL") ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
+    this.apiVersion = options.apiVersion ?? readEnv("API_VERSION") ?? null;
+    this.timeoutMs = options.timeoutMs ?? (Number(readEnv("TIMEOUT_MS")) || DEFAULT_TIMEOUT_MS);
     this.#fetch = options.fetch ?? globalThis.fetch.bind(globalThis);
 
     this.accounts = new Accounts(this);
@@ -95,14 +92,14 @@ export class Zazu {
     method: string,
     path: string,
     options: RequestOptions = {},
-  ): Promise<ZazuResponse<T>> {
+  ): Promise<ManzaResponse<T>> {
     const url = this.#buildUrl(path, options.params);
     const headers = new Headers({
       Authorization: `Bearer ${this.apiKey}`,
       "User-Agent": USER_AGENT,
       Accept: "application/json",
     });
-    if (this.apiVersion) headers.set("Zazu-Version", this.apiVersion);
+    if (this.apiVersion) headers.set("Manza-Version", this.apiVersion);
     if (options.headers) {
       for (const [k, v] of Object.entries(options.headers)) headers.set(k, v);
     }
@@ -122,9 +119,9 @@ export class Zazu {
       raw = await this.#fetch(url, init);
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
-        throw new ZazuConnectionError(`Request timed out after ${this.timeoutMs}ms`);
+        throw new ManzaConnectionError(`Request timed out after ${this.timeoutMs}ms`);
       }
-      throw new ZazuConnectionError(
+      throw new ManzaConnectionError(
         `Connection failed: ${err instanceof Error ? err.message : String(err)}`,
       );
     } finally {
@@ -132,7 +129,7 @@ export class Zazu {
     }
 
     const body = await parseBody<T>(raw);
-    const response = new ZazuResponse(raw, body);
+    const response = new ManzaResponse(raw, body);
     if (response.success) return response;
     throw buildError(response);
   }
@@ -176,7 +173,7 @@ function errorPayload(body: unknown): ErrorPayload {
   return e as ErrorPayload;
 }
 
-function buildError(response: ZazuResponse): ZazuError {
+function buildError(response: ManzaResponse): ManzaError {
   const payload = errorPayload(response.body);
   const message = payload.message;
   const opts = {
@@ -190,23 +187,23 @@ function buildError(response: ZazuResponse): ZazuError {
 
   switch (response.status) {
     case 400:
-      return new ZazuValidationError(message ?? "Bad request", opts);
+      return new ManzaValidationError(message ?? "Bad request", opts);
     case 401:
-      return new ZazuAuthenticationError(message ?? "Authentication failed", opts);
+      return new ManzaAuthenticationError(message ?? "Authentication failed", opts);
     case 403:
-      return new ZazuForbiddenError(message ?? "Forbidden", opts);
+      return new ManzaForbiddenError(message ?? "Forbidden", opts);
     case 404:
-      return new ZazuNotFoundError(message ?? "Not found", opts);
+      return new ManzaNotFoundError(message ?? "Not found", opts);
     case 409:
-      return new ZazuConflictError(message ?? "Conflict", {
+      return new ManzaConflictError(message ?? "Conflict", {
         ...opts,
         paymentId: payload.payment_id ?? null,
       });
     case 422:
-      return new ZazuValidationError(message ?? "Validation failed", opts);
+      return new ManzaValidationError(message ?? "Validation failed", opts);
     case 429: {
       const retryAfter = Number(response.headers.get("retry-after"));
-      return new ZazuRateLimitError(message ?? "Rate limited", {
+      return new ManzaRateLimitError(message ?? "Rate limited", {
         ...opts,
         retryAfter: Number.isFinite(retryAfter) ? retryAfter : null,
       });
@@ -214,14 +211,7 @@ function buildError(response: ZazuResponse): ZazuError {
   }
 
   if (response.status >= 500 && response.status < 600) {
-    return new ZazuServerError(message ?? `Server error (${response.status})`, opts);
+    return new ManzaServerError(message ?? `Server error (${response.status})`, opts);
   }
-  return new ZazuErrorBase(message ?? `Unexpected status ${response.status}`, opts);
-}
-
-function readEnv(name: string): string | undefined {
-  // process.env on Node/Bun, Deno.env on Deno. Browsers don't have either —
-  // callers there must pass options explicitly.
-  if (typeof process !== "undefined" && process.env) return process.env[name];
-  return undefined;
+  return new ManzaErrorBase(message ?? `Unexpected status ${response.status}`, opts);
 }

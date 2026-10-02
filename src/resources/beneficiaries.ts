@@ -1,11 +1,11 @@
-// Mirrors lib/zazu/resources/beneficiaries.rb.
+// Mirrors lib/manza/resources/beneficiaries.rb.
 //
 // Saved transfer recipients. Each beneficiary embeds its bank
 // accounts; the one flagged `default` is used when a transfer names
 // only the beneficiary_id. There is no update or delete via the API.
 
 import type { Page } from "../page.js";
-import type { ZazuResponse } from "../response.js";
+import type { ManzaResponse } from "../response.js";
 import { type ListParams, ResourceBase } from "./base.js";
 
 export class Beneficiaries extends ResourceBase {
@@ -14,7 +14,7 @@ export class Beneficiaries extends ResourceBase {
     return this.listPage("api/beneficiaries", {}, { limit, cursor });
   }
 
-  get(id: string): Promise<ZazuResponse> {
+  get(id: string): Promise<ManzaResponse> {
     return this.httpGet(this.encodePath("api/beneficiaries", id));
   }
 
@@ -22,7 +22,7 @@ export class Beneficiaries extends ResourceBase {
   // person_name / company_name when omitted), person_name,
   // company_name, email, phone_number. Shares a 10/minute limit with
   // createExternalAccount.
-  create(attributes: Record<string, unknown>): Promise<ZazuResponse> {
+  create(attributes: Record<string, unknown>): Promise<ManzaResponse> {
     return this.httpPost("api/beneficiaries", attributes);
   }
 
@@ -35,7 +35,7 @@ export class Beneficiaries extends ResourceBase {
     );
   }
 
-  getExternalAccount(beneficiaryId: string, id: string): Promise<ZazuResponse> {
+  getExternalAccount(beneficiaryId: string, id: string): Promise<ManzaResponse> {
     return this.httpGet(
       this.encodePath("api/beneficiaries", beneficiaryId, "external_accounts", id),
     );
@@ -47,7 +47,7 @@ export class Beneficiaries extends ResourceBase {
   createExternalAccount(
     beneficiaryId: string,
     attributes: Record<string, unknown>,
-  ): Promise<ZazuResponse> {
+  ): Promise<ManzaResponse> {
     return this.httpPost(
       this.encodePath("api/beneficiaries", beneficiaryId, "external_accounts"),
       attributes,

@@ -1,7 +1,7 @@
 {
-  "name": "@getzazu/sdk",
+  "name": "@manza/sdk",
   "version": "0.3.0",
-  "description": "TypeScript SDK for the Zazu API. Runtime-agnostic (Node, Bun, Deno, browsers, Cloudflare Workers).",
+  "description": "TypeScript SDK for the Manza API. Runtime-agnostic (Node, Bun, Deno, browsers, Cloudflare Workers).",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -35,22 +35,22 @@
     "release": "bin/release"
   },
   "keywords": [
-    "zazu",
+    "manza",
     "sdk",
     "api",
     "payments",
     "morocco",
     "fintech"
   ],
-  "author": "Zazu <hello@zazu.ma>",
+  "author": "Manza <hello@get-manza.com>",
   "license": "MIT",
-  "homepage": "https://github.com/getmanza/zazu-ts",
+  "homepage": "https://github.com/getmanza/manza-ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/getmanza/zazu-ts.git"
+    "url": "git+https://github.com/getmanza/manza-ts.git"
   },
   "bugs": {
-    "url": "https://github.com/getmanza/zazu-ts/issues"
+    "url": "https://github.com/getmanza/manza-ts/issues"
   },
   "engines": {
     "node": ">=20.0.0"

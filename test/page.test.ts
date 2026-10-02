@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { Page, ZazuArgumentError, ZazuResponse } from "../src/index.js";
+import { ManzaArgumentError, ManzaResponse, Page } from "../src/index.js";
 
-function makeResponse<T>(body: T): ZazuResponse<T> {
-  return new ZazuResponse(new Response(null, { status: 200 }), body);
+function makeResponse<T>(body: T): ManzaResponse<T> {
+  return new ManzaResponse(new Response(null, { status: 200 }), body);
 }
 
 describe("Page", () => {
@@ -25,7 +25,7 @@ describe("Page", () => {
     const fetcher = async (): Promise<Page<unknown>> => {
       throw new Error("not used");
     };
-    expect(() => new Page<unknown>(response, fetcher)).toThrow(ZazuArgumentError);
+    expect(() => new Page<unknown>(response, fetcher)).toThrow(ManzaArgumentError);
   });
 
   test("returns null from next() when hasMore is false", async () => {

@@ -1,10 +1,10 @@
-// Mirrors lib/zazu/resources/entity.rb.
+// Mirrors lib/manza/resources/entity.rb.
 
-import type { ZazuResponse } from "../response.js";
+import type { ManzaResponse } from "../response.js";
 import { ResourceBase } from "./base.js";
 
 export class Entity extends ResourceBase {
-  get(): Promise<ZazuResponse> {
+  get(): Promise<ManzaResponse> {
     return this.httpGet("api/entity");
   }
 }

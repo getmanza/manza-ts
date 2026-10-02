@@ -1,22 +1,22 @@
-# @getzazu/sdk
+# @manza/sdk
 
-TypeScript SDK for the [Zazu API](https://zazu.ma). Runtime-agnostic — runs on Node 20+, Bun, Deno, browsers, and Cloudflare Workers using native `fetch`.
+TypeScript SDK for the [Manza API](https://get-manza.com). Runtime-agnostic — runs on Node 20+, Bun, Deno, browsers, and Cloudflare Workers using native `fetch`.
 
 ```bash
-bun add @getzazu/sdk    # or npm / pnpm / yarn
+bun add @manza/sdk    # or npm / pnpm / yarn
 ```
 
 ## Quick start
 
 ```ts
-import { Zazu } from "@getzazu/sdk";
+import { Manza } from "@manza/sdk";
 
-const zazu = new Zazu({ apiKey: process.env.ZAZU_API_KEY });
+const manza = new Manza({ apiKey: process.env.MANZA_API_KEY });
 
-const entity = await zazu.entity.get();
+const entity = await manza.entity.get();
 console.log(entity.body);
 
-const customers = await zazu.customers.list({ q: "Acme" });
+const customers = await manza.customers.list({ q: "Acme" });
 for (const c of customers.data) console.log(c);
 
 // Walk every page lazily
@@ -25,57 +25,57 @@ for await (const customer of customers.records()) {
 }
 ```
 
-Environment variables `ZAZU_API_KEY`, `ZAZU_BASE_URL`, `ZAZU_API_VERSION`, and `ZAZU_TIMEOUT_MS` are read by default (Node/Bun only — browsers must pass options explicitly).
+Environment variables `MANZA_API_KEY`, `MANZA_BASE_URL`, `MANZA_API_VERSION`, and `MANZA_TIMEOUT_MS` are read by default (Node/Bun only — browsers must pass options explicitly). The legacy `ZAZU_*` names still work for all of 1.x as a fallback and log a one-time deprecation warning. Upgrading from `@getzazu/sdk`? See the migration guide in [CHANGELOG.md](CHANGELOG.md).
 
 ## Resources
 
 ```ts
-zazu.entity.get();
+manza.entity.get();
 
-zazu.accounts.list({ currency_code: "MAD" });
-zazu.accounts.get(accountId);
-zazu.accounts.listTransactions(accountId);
-zazu.accounts.getTransaction(accountId, transactionId);
+manza.accounts.list({ currency_code: "MAD" });
+manza.accounts.get(accountId);
+manza.accounts.listTransactions(accountId);
+manza.accounts.getTransaction(accountId, transactionId);
 
-zazu.customers.list({ q: "Acme" });
-zazu.customers.get(id);
-zazu.customers.create({ ... });
-zazu.customers.update(id, { ... });
-zazu.customers.delete(id);
+manza.customers.list({ q: "Acme" });
+manza.customers.get(id);
+manza.customers.create({ ... });
+manza.customers.update(id, { ... });
+manza.customers.delete(id);
 
-zazu.invoices.list();
-zazu.invoices.create({ ... });
+manza.invoices.list();
+manza.invoices.create({ ... });
 // state-transition methods exist but the underlying public API is
-// not yet wired up — see zazu/app issue #2174.
+// not yet wired up — see getmanza/app issue #2174.
 
-zazu.paymentLinks.list();
-zazu.paymentLinks.create({ ... });
-zazu.paymentLinks.cancel(id);
+manza.paymentLinks.list();
+manza.paymentLinks.create({ ... });
+manza.paymentLinks.cancel(id);
 
-zazu.webhookEndpoints.list();
-zazu.webhookEndpoints.create({ url, events: [...] });
-zazu.webhookEndpoints.test(id);
-zazu.webhookEndpoints.regenerateSecret(id);
-zazu.webhookEndpoints.enable(id);
-zazu.webhookEndpoints.disable(id);
+manza.webhookEndpoints.list();
+manza.webhookEndpoints.create({ url, events: [...] });
+manza.webhookEndpoints.test(id);
+manza.webhookEndpoints.regenerateSecret(id);
+manza.webhookEndpoints.enable(id);
+manza.webhookEndpoints.disable(id);
 
-zazu.checkoutSessions.create({ account_id, amount, success_url, cancel_url });
-zazu.checkoutSessions.get(id);
+manza.checkoutSessions.create({ account_id, amount, success_url, cancel_url });
+manza.checkoutSessions.get(id);
 
-zazu.beneficiaries.list();
-zazu.beneficiaries.get(id);
-zazu.beneficiaries.create({ beneficiary_type: "individual", person_name: "Jane Doe" });
-zazu.beneficiaries.listExternalAccounts(beneficiaryId);
-zazu.beneficiaries.getExternalAccount(beneficiaryId, id);
-zazu.beneficiaries.createExternalAccount(beneficiaryId, { account_number });
+manza.beneficiaries.list();
+manza.beneficiaries.get(id);
+manza.beneficiaries.create({ beneficiary_type: "individual", person_name: "Jane Doe" });
+manza.beneficiaries.listExternalAccounts(beneficiaryId);
+manza.beneficiaries.getExternalAccount(beneficiaryId, id);
+manza.beneficiaries.createExternalAccount(beneficiaryId, { account_number });
 
-zazu.transferDrafts.create({ account_id, beneficiary_id, amount: "150.00", client_reference });
-zazu.transferDrafts.get(id);
-zazu.transferDrafts.authorize(id, { authorization_id, signature });
-zazu.transferDrafts.decline(id, { authorization_id, reason });
+manza.transferDrafts.create({ account_id, beneficiary_id, amount: "150.00", client_reference });
+manza.transferDrafts.get(id);
+manza.transferDrafts.authorize(id, { authorization_id, signature });
+manza.transferDrafts.decline(id, { authorization_id, reason });
 
-zazu.payeeTrustRequests.create({ external_account_ids: [id] });
-zazu.payeeTrustRequests.get(id);
+manza.payeeTrustRequests.create({ external_account_ids: [id] });
+manza.payeeTrustRequests.get(id);
 ```
 
 ## Transfer authorization
@@ -83,7 +83,7 @@ zazu.payeeTrustRequests.get(id);
 The `payment.authorization_requested` webhook delivers an `authorization_id` and a one-time `nonce`. Build the signature input from your own record of the draft (not the webhook's `signature_input`, which is there only to compare against), sign it with the authorizer endpoint's signing secret, and pass the result to `transferDrafts.authorize`.
 
 ```ts
-import { Zazu, TransferAuthorization } from "@getzazu/sdk";
+import { Manza, TransferAuthorization } from "@manza/sdk";
 
 const input = TransferAuthorization.signatureInput({
   payment_id: draft.id,
@@ -100,7 +100,7 @@ const signature = await TransferAuthorization.sign({
   signature_input: input,
 });
 
-await zazu.transferDrafts.authorize(draft.id, {
+await manza.transferDrafts.authorize(draft.id, {
   authorization_id: authorizationId,
   signature,
 });
@@ -108,23 +108,23 @@ await zazu.transferDrafts.authorize(draft.id, {
 
 `TransferAuthorization.sign` is async — it uses the Web Crypto API so it works on Node, Bun, Deno, browsers, and Workers without a `node:crypto` import.
 
-Use a key other than the one that created the draft — otherwise 403 `same_key_forbidden`. A blank signature raises `ZazuArgumentError` locally; the server counts a missing one as a failed attempt, and five fail the challenge.
+Use a key other than the one that created the draft — otherwise 403 `same_key_forbidden`. A blank signature raises `ManzaArgumentError` locally; the server counts a missing one as a failed attempt, and five fail the challenge.
 
 ## Errors
 
 Ten concrete subclasses; discriminate with `instanceof`.
 
 ```ts
-import { ZazuValidationError, ZazuRateLimitError, ZazuNotFoundError } from "@getzazu/sdk";
+import { ManzaValidationError, ManzaRateLimitError, ManzaNotFoundError } from "@manza/sdk";
 
 try {
-  await zazu.customers.create({ ... });
+  await manza.customers.create({ ... });
 } catch (e) {
-  if (e instanceof ZazuValidationError) {
+  if (e instanceof ManzaValidationError) {
     console.error(e.param, e.body);
-  } else if (e instanceof ZazuRateLimitError) {
+  } else if (e instanceof ManzaRateLimitError) {
     console.warn(`Retry after ${e.retryAfter}s`);
-  } else if (e instanceof ZazuNotFoundError) {
+  } else if (e instanceof ManzaNotFoundError) {
     /* ... */
   } else {
     throw e;
@@ -134,11 +134,11 @@ try {
 
 ## Wire format
 
-Response bodies are returned as-is from the API — `snake_case` keys, no auto-camelCasing. The same shape ships across every Zazu SDK (Ruby, TypeScript, Python, ...) so the cassette contract is one-to-one.
+Response bodies are returned as-is from the API — `snake_case` keys, no auto-camelCasing. The same shape ships across every Manza SDK (Ruby, TypeScript, Python, ...) so the cassette contract is one-to-one.
 
 ## Cassette-replay testing
 
-Tests replay the canonical cassettes recorded by [zazu-ruby](https://github.com/getzazu/zazu-ruby). The cassettes are downloaded at CI time from the Ruby SDK's release tarball, parsed via `js-yaml`, and replayed with [msw](https://mswjs.io). Same interactions, same assertions, every language.
+Tests replay the canonical cassettes recorded by [manza-ruby](https://github.com/getmanza/manza-ruby). The cassettes are downloaded at CI time from the Ruby SDK's release tarball, parsed via `js-yaml`, and replayed with [msw](https://mswjs.io). Same interactions, same assertions, every language.
 
 ```bash
 bun run fetch:cassettes
@@ -147,8 +147,8 @@ bun test
 
 ## Sibling SDKs
 
-- [zazu-ruby](https://github.com/getzazu/zazu-ruby) — reference implementation (records the cassettes)
-- zazu-python, zazu-php, zazu-go, zazu-crystal, zazu-elixir — coming up
+- [manza-ruby](https://github.com/getmanza/manza-ruby) — reference implementation (records the cassettes)
+- manza-python, manza-php, manza-go, manza-crystal, manza-elixir — coming up
 
 ## License
 

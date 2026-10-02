@@ -1,11 +1,42 @@
 # Changelog
 
-All notable changes to `@getzazu/sdk` are documented here.
+All notable changes to `@manza/sdk` (formerly `@getzazu/sdk`) are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+Renamed from Zazu to Manza; the first release under the new name is 1.0.0.
+
+### Changed (breaking)
+
+- Package `@getzazu/sdk` is now `@manza/sdk`.
+- `Zazu` client is now `Manza`; every `Zazu*Error` is now `Manza*Error`
+  (`ZazuError` → `ManzaError`, `ZazuValidationError` → `ManzaValidationError`, …).
+- `ZazuResponse` is now `ManzaResponse`.
+- The version header is `Manza-Version` (was `Zazu-Version`).
+- The User-Agent is `manza-ts/<version>` (was `zazu-ts/<version>`).
+- Repository moved to `getmanza/manza-ts`.
+
+### Deprecated
+
+- `ZAZU_API_KEY`, `ZAZU_BASE_URL`, `ZAZU_API_VERSION` and `ZAZU_TIMEOUT_MS` still
+  work as a fallback for all of 1.x, with a one-time deprecation warning per
+  variable. Use the `MANZA_*` names; the fallback is removed in 2.0.
+
+### Migration guide
+
+| Before | After |
+|---|---|
+| `bun add @getzazu/sdk` | `bun add @manza/sdk` |
+| `import { Zazu } from "@getzazu/sdk"` | `import { Manza } from "@manza/sdk"` |
+| `new Zazu({ apiKey })` | `new Manza({ apiKey })` |
+| `err instanceof ZazuValidationError` | `err instanceof ManzaValidationError` |
+| `ZAZU_API_KEY` | `MANZA_API_KEY` |
+| `ZAZU_BASE_URL` | `MANZA_BASE_URL` |
+| `ZAZU_API_VERSION` | `MANZA_API_VERSION` |
+| `ZAZU_TIMEOUT_MS` | `MANZA_TIMEOUT_MS` |
 
 ## [0.3.0]
 
