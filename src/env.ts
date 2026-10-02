@@ -1,7 +1,12 @@
 // MANZA_* environment lookup with a ZAZU_* fallback for all of 1.x.
 // The fallback warns once per legacy variable per process.
 
-const warned = new Set<string>();
+// Shared through globalThis so the ESM and CJS builds, if both get loaded,
+// still warn only once per variable.
+const WARNED = Symbol.for("@manza/sdk.warnedLegacyEnv");
+const store = globalThis as typeof globalThis & { [WARNED]?: Set<string> };
+store[WARNED] ??= new Set<string>();
+const warned = store[WARNED];
 
 function rawEnv(name: string): string | undefined {
   // process.env on Node/Bun. Browsers don't have it — callers there must
