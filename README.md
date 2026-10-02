@@ -61,11 +61,58 @@ zazu.webhookEndpoints.disable(id);
 
 zazu.checkoutSessions.create({ account_id, amount, success_url, cancel_url });
 zazu.checkoutSessions.get(id);
+
+zazu.beneficiaries.list();
+zazu.beneficiaries.get(id);
+zazu.beneficiaries.create({ beneficiary_type: "individual", person_name: "Jane Doe" });
+zazu.beneficiaries.listExternalAccounts(beneficiaryId);
+zazu.beneficiaries.getExternalAccount(beneficiaryId, id);
+zazu.beneficiaries.createExternalAccount(beneficiaryId, { account_number });
+
+zazu.transferDrafts.create({ account_id, beneficiary_id, amount: "150.00", client_reference });
+zazu.transferDrafts.get(id);
+zazu.transferDrafts.authorize(id, { authorization_id, signature });
+zazu.transferDrafts.decline(id, { authorization_id, reason });
+
+zazu.payeeTrustRequests.create({ external_account_ids: [id] });
+zazu.payeeTrustRequests.get(id);
 ```
+
+## Transfer authorization
+
+The `payment.authorization_requested` webhook delivers an `authorization_id` and a one-time `nonce`. Build the signature input from your own record of the draft (not the webhook's `signature_input`, which is there only to compare against), sign it with the authorizer endpoint's signing secret, and pass the result to `transferDrafts.authorize`.
+
+```ts
+import { Zazu, TransferAuthorization } from "@getzazu/sdk";
+
+const input = TransferAuthorization.signatureInput({
+  payment_id: draft.id,
+  nonce,
+  amount: draft.amount, // The API's decimal string verbatim ("2500.0"), not a number.
+  currency_code: draft.currency_code,
+  account_id: draft.account_id,
+  payee: TransferAuthorization.payeeFor({ external_account_id: draft.external_account_id }),
+  client_reference: draft.client_reference,
+});
+
+const signature = await TransferAuthorization.sign({
+  secret: signingSecret,
+  signature_input: input,
+});
+
+await zazu.transferDrafts.authorize(draft.id, {
+  authorization_id: authorizationId,
+  signature,
+});
+```
+
+`TransferAuthorization.sign` is async — it uses the Web Crypto API so it works on Node, Bun, Deno, browsers, and Workers without a `node:crypto` import.
+
+Use a key other than the one that created the draft — otherwise 403 `same_key_forbidden`. A blank signature raises `ZazuArgumentError` locally; the server counts a missing one as a failed attempt, and five fail the challenge.
 
 ## Errors
 
-Nine concrete subclasses; discriminate with `instanceof`.
+Ten concrete subclasses; discriminate with `instanceof`.
 
 ```ts
 import { ZazuValidationError, ZazuRateLimitError, ZazuNotFoundError } from "@getzazu/sdk";

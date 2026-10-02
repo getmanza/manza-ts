@@ -4,6 +4,7 @@
 import {
   ZazuAuthenticationError,
   ZazuConfigurationError,
+  ZazuConflictError,
   ZazuConnectionError,
   type ZazuError,
   ZazuError as ZazuErrorBase,
@@ -19,6 +20,7 @@ import { CheckoutSessions } from "./resources/checkout_sessions.js";
 import { Customers } from "./resources/customers.js";
 import { Entity } from "./resources/entity.js";
 import { Invoices } from "./resources/invoices.js";
+import { PayeeTrustRequests } from "./resources/payee_trust_requests.js";
 import { PaymentLinks } from "./resources/payment_links.js";
 import { TransferDrafts } from "./resources/transfer_drafts.js";
 import { WebhookEndpoints } from "./resources/webhook_endpoints.js";
@@ -39,7 +41,8 @@ export interface RequestOptions {
   headers?: Record<string, string> | undefined;
 }
 
-const DEFAULT_BASE_URL = "https://zazu.ma";
+// Morocco production. South Africa: https://za.manza.finance.
+const DEFAULT_BASE_URL = "https://ma.manza.finance";
 const DEFAULT_TIMEOUT_MS = 30_000;
 const USER_AGENT = `zazu-ts/${VERSION}`;
 
@@ -56,6 +59,7 @@ export class Zazu {
   readonly customers: Customers;
   readonly entity: Entity;
   readonly invoices: Invoices;
+  readonly payeeTrustRequests: PayeeTrustRequests;
   readonly paymentLinks: PaymentLinks;
   readonly transferDrafts: TransferDrafts;
   readonly webhookEndpoints: WebhookEndpoints;
@@ -81,6 +85,7 @@ export class Zazu {
     this.customers = new Customers(this);
     this.entity = new Entity(this);
     this.invoices = new Invoices(this);
+    this.payeeTrustRequests = new PayeeTrustRequests(this);
     this.paymentLinks = new PaymentLinks(this);
     this.transferDrafts = new TransferDrafts(this);
     this.webhookEndpoints = new WebhookEndpoints(this);
@@ -161,6 +166,7 @@ interface ErrorPayload {
   message?: string;
   type?: string;
   param?: string;
+  payment_id?: string;
 }
 
 function errorPayload(body: unknown): ErrorPayload {
@@ -183,12 +189,19 @@ function buildError(response: ZazuResponse): ZazuError {
   };
 
   switch (response.status) {
+    case 400:
+      return new ZazuValidationError(message ?? "Bad request", opts);
     case 401:
       return new ZazuAuthenticationError(message ?? "Authentication failed", opts);
     case 403:
       return new ZazuForbiddenError(message ?? "Forbidden", opts);
     case 404:
       return new ZazuNotFoundError(message ?? "Not found", opts);
+    case 409:
+      return new ZazuConflictError(message ?? "Conflict", {
+        ...opts,
+        paymentId: payload.payment_id ?? null,
+      });
     case 422:
       return new ZazuValidationError(message ?? "Validation failed", opts);
     case 429: {

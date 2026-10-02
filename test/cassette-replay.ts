@@ -73,10 +73,17 @@ export function cassetteHandler(interaction: CassetteInteraction) {
   const recorded = new URL(uri);
   const pathOnly = `${recorded.protocol}//${recorded.host}${recorded.pathname}`;
   const expectedParams = sortedParams(recorded.searchParams);
+  const expectedBody = canonicalBody(recorded.pathname, interaction.request.body?.string ?? "");
 
-  return http[verb](pathOnly, ({ request }) => {
+  return http[verb](pathOnly, async ({ request }) => {
     const actualParams = sortedParams(new URL(request.url).searchParams);
     if (actualParams !== expectedParams) return undefined;
+
+    if (expectedBody !== null) {
+      const actualText = await request.clone().text();
+      const actual = canonicalBody(recorded.pathname, actualText);
+      if (actual !== expectedBody) return undefined;
+    }
 
     return HttpResponse.text(interaction.response.body.string, {
       status: interaction.response.status.code,
@@ -88,6 +95,35 @@ export function cassetteHandler(interaction: CassetteInteraction) {
 function sortedParams(params: URLSearchParams): string {
   const entries = [...params.entries()].sort(([a], [b]) => a.localeCompare(b));
   return entries.map(([k, v]) => `${k}=${v}`).join("&");
+}
+
+// Canonical form for body matching: JSON parsed and keys sorted so key
+// order can't cause a miss. Returns null when the cassette recorded no
+// body (GET and friends), skipping the body check altogether.
+//
+// Transfer-authorization cassettes match on body with `signature`
+// removed — the server records the exact signature it saw, but the
+// SDK test can only sign deterministically if we hand it the same
+// fixed vector the Ruby suite uses. Dropping the field here lets the
+// SDK pass any signature and still hit the recorded response.
+function canonicalBody(pathname: string, raw: string): string | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (pathname.endsWith("/authorize")) delete parsed.signature;
+    return stableStringify(parsed);
+  } catch {
+    return raw;
+  }
+}
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+  const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
+  return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${stableStringify(v)}`).join(",")}}`;
 }
 
 export async function startServer(

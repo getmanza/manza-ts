@@ -49,3 +49,14 @@ export class ZazuRateLimitError extends ZazuError {
 }
 export class ZazuServerError extends ZazuError {}
 export class ZazuArgumentError extends ZazuError {}
+// 409 — the request conflicts with an existing resource. For a
+// duplicate `client_reference` on a transfer draft (type
+// "duplicate_client_reference"), `paymentId` names the existing draft.
+export class ZazuConflictError extends ZazuError {
+  readonly paymentId: string | null;
+
+  constructor(message: string, options: ZazuErrorOptions & { paymentId?: string | null } = {}) {
+    super(message, options);
+    this.paymentId = options.paymentId ?? null;
+  }
+}

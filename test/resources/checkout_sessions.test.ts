@@ -3,7 +3,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { Zazu } from "../../src/index.js";
 import { startServer } from "../cassette-replay.js";
-import { FIXTURE_IDS, STAGING_BASE_URL, TEST_API_KEY } from "../fixture-ids.js";
+import { CASSETTE_BASE_URL, FIXTURE_IDS, TEST_API_KEY } from "../fixture-ids.js";
 
 const CASSETTES = ["checkout_sessions/create", "checkout_sessions/get"];
 
@@ -13,7 +13,7 @@ describe("CheckoutSessions (cassette replay)", () => {
 
   beforeAll(async () => {
     server = await startServer(CASSETTES);
-    zazu = new Zazu({ apiKey: TEST_API_KEY, baseUrl: STAGING_BASE_URL });
+    zazu = new Zazu({ apiKey: TEST_API_KEY, baseUrl: CASSETTE_BASE_URL });
   });
 
   afterAll(() => server?.close());
