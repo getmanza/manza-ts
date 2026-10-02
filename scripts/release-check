@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# bin/release adapter: must pass before the version bump is committed.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+bun install --frozen-lockfile
+bun run fetch:cassettes   # the replay tests need the zazu-ruby cassette tarball, as in CI
+bun run check:all
