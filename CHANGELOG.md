@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `@manza/sdk` (formerly `@getzazu/sdk`) are documented here.
+All notable changes to `@getmanza/sdk` (formerly `@getzazu/sdk`) are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -11,7 +11,7 @@ Renamed from Zazu to Manza; the first release under the new name is 1.0.0.
 
 ### Changed (breaking)
 
-- Package `@getzazu/sdk` is now `@manza/sdk`.
+- Package `@getzazu/sdk` is now `@getmanza/sdk`.
 - `Zazu` client is now `Manza`; every `Zazu*Error` is now `Manza*Error`
   (`ZazuError` → `ManzaError`, `ZazuValidationError` → `ManzaValidationError`, …).
 - `ZazuResponse` is now `ManzaResponse`.
@@ -29,8 +29,8 @@ Renamed from Zazu to Manza; the first release under the new name is 1.0.0.
 
 | Before | After |
 |---|---|
-| `bun add @getzazu/sdk` | `bun add @manza/sdk` |
-| `import { Zazu } from "@getzazu/sdk"` | `import { Manza } from "@manza/sdk"` |
+| `bun add @getzazu/sdk` | `bun add @getmanza/sdk` |
+| `import { Zazu } from "@getzazu/sdk"` | `import { Manza } from "@getmanza/sdk"` |
 | `new Zazu({ apiKey })` | `new Manza({ apiKey })` |
 | `err instanceof ZazuValidationError` | `err instanceof ManzaValidationError` |
 | `ZAZU_API_KEY` | `MANZA_API_KEY` |

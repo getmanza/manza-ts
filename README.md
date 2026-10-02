@@ -1,15 +1,15 @@
-# @manza/sdk
+# @getmanza/sdk
 
 TypeScript SDK for the [Manza API](https://get-manza.com). Runtime-agnostic — runs on Node 20+, Bun, Deno, browsers, and Cloudflare Workers using native `fetch`.
 
 ```bash
-bun add @manza/sdk    # or npm / pnpm / yarn
+bun add @getmanza/sdk    # or npm / pnpm / yarn
 ```
 
 ## Quick start
 
 ```ts
-import { Manza } from "@manza/sdk";
+import { Manza } from "@getmanza/sdk";
 
 const manza = new Manza({ apiKey: process.env.MANZA_API_KEY });
 
@@ -83,7 +83,7 @@ manza.payeeTrustRequests.get(id);
 The `payment.authorization_requested` webhook delivers an `authorization_id` and a one-time `nonce`. Build the signature input from your own record of the draft (not the webhook's `signature_input`, which is there only to compare against), sign it with the authorizer endpoint's signing secret, and pass the result to `transferDrafts.authorize`.
 
 ```ts
-import { Manza, TransferAuthorization } from "@manza/sdk";
+import { Manza, TransferAuthorization } from "@getmanza/sdk";
 
 const input = TransferAuthorization.signatureInput({
   payment_id: draft.id,
@@ -115,7 +115,7 @@ Use a key other than the one that created the draft — otherwise 403 `same_key_
 Ten concrete subclasses; discriminate with `instanceof`.
 
 ```ts
-import { ManzaValidationError, ManzaRateLimitError, ManzaNotFoundError } from "@manza/sdk";
+import { ManzaValidationError, ManzaRateLimitError, ManzaNotFoundError } from "@getmanza/sdk";
 
 try {
   await manza.customers.create({ ... });

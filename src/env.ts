@@ -3,7 +3,7 @@
 
 // Shared through globalThis so the ESM and CJS builds, if both get loaded,
 // still warn only once per variable.
-const WARNED = Symbol.for("@manza/sdk.warnedLegacyEnv");
+const WARNED = Symbol.for("@getmanza/sdk.warnedLegacyEnv");
 const store = globalThis as typeof globalThis & { [WARNED]?: Set<string> };
 store[WARNED] ??= new Set<string>();
 const warned = store[WARNED];

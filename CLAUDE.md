@@ -1,4 +1,4 @@
-# @manza/sdk
+# @getmanza/sdk
 
 TypeScript SDK for the Manza API. Runtime-agnostic — runs on Node 20+, Bun, Deno, browsers, and Cloudflare Workers using native `fetch`.
 
@@ -34,7 +34,7 @@ Mirrors `manza-ruby` one-to-one:
 
 - **Bun for tooling, not Node.** Local dev, CI, build, test — all Bun. Node is supported as a *runtime* target for the published package, not as a dev dependency.
 - **`bun run check:all` before every commit.** Runs typecheck + lint + test. CI runs the same commands.
-- **No long-lived `NPM_TOKEN`.** Releases publish via npm OIDC trusted publishing through the `release` GitHub environment. Verify the binding on https://www.npmjs.com/package/@manza/sdk/access if it ever drifts.
+- **No long-lived `NPM_TOKEN`.** Releases publish via npm OIDC trusted publishing through the `release` GitHub environment. Verify the binding on https://www.npmjs.com/package/@getmanza/sdk/access if it ever drifts.
 - **Cassettes come from manza-ruby.** `bun run fetch:cassettes` downloads the tarball. The Ruby SDK records, every other SDK replays.
 - **Snake-case wire format.** API request/response bodies use snake_case. Don't transform them.
 - **No new error classes without updating manza-ruby.** The 10-class hierarchy is shared across SDKs. Adding to it means coordinating both repos.
@@ -160,5 +160,5 @@ If the contract breaks (e.g., new request shape), it's a coordinated change acro
 
 - Ruby SDK (reference): https://github.com/getmanza/manza-ruby
 - This repo: https://github.com/getmanza/manza-ts
-- npm package: https://www.npmjs.com/package/@manza/sdk
+- npm package: https://www.npmjs.com/package/@getmanza/sdk
 - CLI consumer: https://github.com/getmanza/cli
