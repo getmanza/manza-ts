@@ -44,13 +44,13 @@
   ],
   "author": "Zazu <hello@zazu.ma>",
   "license": "MIT",
-  "homepage": "https://github.com/getzazu/zazu-ts",
+  "homepage": "https://github.com/getmanza/zazu-ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/getzazu/zazu-ts.git"
+    "url": "git+https://github.com/getmanza/zazu-ts.git"
   },
   "bugs": {
-    "url": "https://github.com/getzazu/zazu-ts/issues"
+    "url": "https://github.com/getmanza/zazu-ts/issues"
   },
   "engines": {
     "node": ">=20.0.0"
