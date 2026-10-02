@@ -1,4 +1,4 @@
-// Mirrors lib/zazu/transfer_authorization.rb. Pure functions — no HTTP.
+// Mirrors lib/manza/transfer_authorization.rb. Pure functions — no HTTP.
 //
 // The `payment.authorization_requested` webhook delivers the
 // authorization id and a one-time nonce. Build the signature input
@@ -7,7 +7,7 @@
 // with the authorizer endpoint's signing secret, and pass the result
 // to TransferDrafts#authorize.
 
-import { ZazuArgumentError } from "./errors.js";
+import { ManzaArgumentError } from "./errors.js";
 
 export const SIGNATURE_VERSION = "manza.transfer-authorization.v1";
 
@@ -30,7 +30,7 @@ export interface PayeeForParams {
 
 export function signatureInput(fields: SignatureInputFields): string {
   if (typeof fields.amount !== "string") {
-    throw new ZazuArgumentError(
+    throw new ManzaArgumentError(
       `amount must be the API's decimal string (got ${JSON.stringify(fields.amount)})`,
     );
   }
@@ -66,7 +66,7 @@ export function payeeFor(params: PayeeForParams): string {
   const ext = params.external_account_id ?? null;
   const own = params.destination_account_id ?? null;
   if ((ext === null) === (own === null)) {
-    throw new ZazuArgumentError(
+    throw new ManzaArgumentError(
       "pass exactly one of external_account_id or destination_account_id",
     );
   }

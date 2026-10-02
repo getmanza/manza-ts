@@ -1,4 +1,4 @@
-// Reads VCR YAML cassettes (recorded by zazu-ruby) and registers them
+// Reads VCR YAML cassettes (recorded by manza-ruby) and registers them
 // as msw HTTP handlers so identical interactions replay against this
 // SDK. The contract is enforced cross-language: every SDK that
 // consumes this tarball must replay the exact request shape.
@@ -13,7 +13,7 @@ import { setupServer } from "msw/node";
 // Ruby's Psych emits this with a "primary" tag (just `!binary`) which
 // js-yaml resolves to the URI `!<!binary>` rather than the canonical
 // `tag:yaml.org,2002:binary`. Register both forms so either works,
-// and decode the base64 to a UTF-8 string — Zazu only ever returns
+// and decode the base64 to a UTF-8 string — Manza only ever returns
 // JSON over the wire.
 const decode = (data: string) => Buffer.from(data.replace(/\s+/g, ""), "base64").toString("utf8");
 

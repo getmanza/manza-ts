@@ -1,11 +1,11 @@
-// Mirrors lib/zazu/resources/base.rb. Carries a back-reference to the
+// Mirrors lib/manza/resources/base.rb. Carries a back-reference to the
 // client and exposes thin HTTP helpers, plus pagination + path-encoding
 // utilities every resource shares.
 
-import type { Zazu } from "../client.js";
-import { ZazuArgumentError } from "../errors.js";
+import type { Manza } from "../client.js";
+import { ManzaArgumentError } from "../errors.js";
 import { MAX_PER_PAGE, Page, type PageBody } from "../page.js";
-import type { ZazuResponse } from "../response.js";
+import type { ManzaResponse } from "../response.js";
 
 export interface ListParams {
   limit?: number | undefined;
@@ -13,25 +13,25 @@ export interface ListParams {
 }
 
 export abstract class ResourceBase {
-  protected readonly client: Zazu;
+  protected readonly client: Manza;
 
-  constructor(client: Zazu) {
+  constructor(client: Manza) {
     this.client = client;
   }
 
-  protected httpGet<T>(path: string, params?: Record<string, unknown>): Promise<ZazuResponse<T>> {
+  protected httpGet<T>(path: string, params?: Record<string, unknown>): Promise<ManzaResponse<T>> {
     return this.client.request<T>("GET", path, { params });
   }
 
-  protected httpPost<T>(path: string, body?: unknown): Promise<ZazuResponse<T>> {
+  protected httpPost<T>(path: string, body?: unknown): Promise<ManzaResponse<T>> {
     return this.client.request<T>("POST", path, { body });
   }
 
-  protected httpPatch<T>(path: string, body?: unknown): Promise<ZazuResponse<T>> {
+  protected httpPatch<T>(path: string, body?: unknown): Promise<ManzaResponse<T>> {
     return this.client.request<T>("PATCH", path, { body });
   }
 
-  protected httpDelete<T>(path: string): Promise<ZazuResponse<T>> {
+  protected httpDelete<T>(path: string): Promise<ManzaResponse<T>> {
     return this.client.request<T>("DELETE", path);
   }
 
@@ -54,25 +54,25 @@ export abstract class ResourceBase {
   protected validateLimit(limit: number | undefined): number {
     if (limit === undefined || limit === null) return MAX_PER_PAGE;
     if (!Number.isInteger(limit) || limit <= 0) {
-      throw new ZazuArgumentError(
+      throw new ManzaArgumentError(
         `limit must be a positive integer (got ${JSON.stringify(limit)})`,
       );
     }
     if (limit > MAX_PER_PAGE) {
-      throw new ZazuArgumentError(`limit cannot exceed ${MAX_PER_PAGE} (got ${limit})`);
+      throw new ManzaArgumentError(`limit cannot exceed ${MAX_PER_PAGE} (got ${limit})`);
     }
     return limit;
   }
 
   // Path joiner that percent-encodes segments and refuses blank ones.
-  // Mirrors the encode_path tightening we did in zazu-ruby — a blank
+  // Mirrors the encode_path tightening we did in manza-ruby — a blank
   // segment silently turns /things/:id into /things/ and dispatches
   // to the list endpoint, so we surface it loudly.
   protected encodePath(base: string, ...segments: string[]): string {
     const encoded = segments.map((s) => {
       const str = String(s);
       if (str.length === 0) {
-        throw new ZazuArgumentError("path segment cannot be blank");
+        throw new ManzaArgumentError("path segment cannot be blank");
       }
       return str.replace(
         /[^A-Za-z0-9._~-]/g,

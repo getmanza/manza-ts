@@ -68,9 +68,9 @@ Project conventions:
 
 | Use | Instead of |
 |-----|-----------|
-| `Zazu` client (`new Zazu({ apiKey })`) | hand-rolled `fetch` |
+| `Manza` client (`new Manza({ apiKey })`) | hand-rolled `fetch` |
 | `Page<T>` from the SDK | manual cursor loop |
-| `instanceof ZazuValidationError` etc. | status-code switching |
+| `instanceof ManzaValidationError` etc. | status-code switching |
 | `import type { ... }` for type-only imports | mixed runtime + type imports |
 | snake_case for wire-format response bodies | auto-camelCasing |
 | `bun test` | jest, mocha, vitest |

@@ -1,7 +1,7 @@
-// Mirrors lib/zazu/resources/accounts.rb.
+// Mirrors lib/manza/resources/accounts.rb.
 
 import type { Page } from "../page.js";
-import type { ZazuResponse } from "../response.js";
+import type { ManzaResponse } from "../response.js";
 import { type ListParams, ResourceBase } from "./base.js";
 
 export interface AccountListParams extends ListParams {
@@ -21,7 +21,7 @@ export class Accounts extends ResourceBase {
     return this.listPage("api/accounts", rest, { limit, cursor });
   }
 
-  get(id: string): Promise<ZazuResponse> {
+  get(id: string): Promise<ManzaResponse> {
     return this.httpGet(this.encodePath("api/accounts", id));
   }
 
@@ -38,7 +38,7 @@ export class Accounts extends ResourceBase {
     );
   }
 
-  getTransaction(accountId: string, transactionId: string): Promise<ZazuResponse> {
+  getTransaction(accountId: string, transactionId: string): Promise<ManzaResponse> {
     return this.httpGet(this.encodePath("api/accounts", accountId, "transactions", transactionId));
   }
 }

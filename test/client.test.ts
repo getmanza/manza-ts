@@ -1,29 +1,29 @@
 import { describe, expect, test } from "bun:test";
-import { Zazu, ZazuConfigurationError } from "../src/index.js";
+import { Manza, ManzaConfigurationError } from "../src/index.js";
 
-describe("Zazu", () => {
+describe("Manza", () => {
   test("requires an apiKey", () => {
-    const original = process.env.ZAZU_API_KEY;
-    delete process.env.ZAZU_API_KEY;
+    const original = process.env.MANZA_API_KEY;
+    delete process.env.MANZA_API_KEY;
     try {
-      expect(() => new Zazu()).toThrow(ZazuConfigurationError);
+      expect(() => new Manza()).toThrow(ManzaConfigurationError);
     } finally {
-      if (original !== undefined) process.env.ZAZU_API_KEY = original;
+      if (original !== undefined) process.env.MANZA_API_KEY = original;
     }
   });
 
   test("strips trailing slash from baseUrl", () => {
-    const z = new Zazu({ apiKey: "test", baseUrl: "https://staging.zazu.ma///" });
-    expect(z.baseUrl).toBe("https://staging.zazu.ma");
+    const z = new Manza({ apiKey: "test", baseUrl: "https://staging.manza.ma///" });
+    expect(z.baseUrl).toBe("https://staging.manza.ma");
   });
 
   test("defaults baseUrl to Morocco production (ma.manza.finance)", () => {
-    const z = new Zazu({ apiKey: "test" });
+    const z = new Manza({ apiKey: "test" });
     expect(z.baseUrl).toBe("https://ma.manza.finance");
   });
 
   test("exposes every resource", () => {
-    const z = new Zazu({ apiKey: "test" });
+    const z = new Manza({ apiKey: "test" });
     expect(z.accounts).toBeDefined();
     expect(z.beneficiaries).toBeDefined();
     expect(z.checkoutSessions).toBeDefined();

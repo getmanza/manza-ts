@@ -141,7 +141,7 @@ If the failure was CI-config drift (workflow YAML out of sync with reality), als
 ### Cassette replay says "no handler matched"
 
 The recorded request shape drifted from what the SDK now sends. Either:
-- Re-record cassettes via zazu-ruby and ship a new SDK version
+- Re-record cassettes via manza-ruby and ship a new SDK version
 - Adjust the harness's URL matcher (path-only vs full URL, sorted vs ordered query)
 
 ### Trusted-publishing returned 404 from npm

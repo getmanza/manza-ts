@@ -1,6 +1,6 @@
 name: Release
 
-# Tag-driven release. Mirrors zazu-ruby:
+# Tag-driven release. Mirrors manza-ruby:
 #   - Test gate runs on Bun + Node
 #   - Build job packs the npm tarball + checksums
 #   - publish-npm job pauses on the `release` GitHub environment
@@ -73,14 +73,14 @@ jobs:
         id: pack
         run: |
           npm pack --pack-destination .
-          TARBALL=$(ls getzazu-sdk-*.tgz)
+          TARBALL=$(ls manza-sdk-*.tgz)
           echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
           TAG_VERSION="${{ github.event.release.tag_name }}"
           echo "version=${TAG_VERSION#v}" >> "$GITHUB_OUTPUT"
 
       - name: Generate checksums
         run: |
-          TARBALL=$(ls getzazu-sdk-*.tgz)
+          TARBALL=$(ls manza-sdk-*.tgz)
           sha256sum "$TARBALL" > "$TARBALL.sha256"
           sha512sum "$TARBALL" > "$TARBALL.sha512"
 
@@ -88,9 +88,9 @@ jobs:
         with:
           name: package
           path: |
-            getzazu-sdk-*.tgz
-            getzazu-sdk-*.tgz.sha256
-            getzazu-sdk-*.tgz.sha512
+            manza-sdk-*.tgz
+            manza-sdk-*.tgz.sha256
+            manza-sdk-*.tgz.sha512
           if-no-files-found: error
 
   publish-npm:
@@ -108,8 +108,8 @@ jobs:
 
       - name: Verify checksums
         run: |
-          sha256sum -c getzazu-sdk-*.tgz.sha256
-          sha512sum -c getzazu-sdk-*.tgz.sha512
+          sha256sum -c manza-sdk-*.tgz.sha256
+          sha512sum -c manza-sdk-*.tgz.sha512
 
       # Deliberately NOT setting `registry-url`. setup-node's
       # `registry-url` triggers it to write `_authToken=${NODE_AUTH_TOKEN}`
@@ -130,7 +130,7 @@ jobs:
       # https://github.com/npm/cli/blob/latest/lib/utils/oidc.js
       - name: Publish to npm via OIDC trusted publishing
         run: |
-          TARBALL=$(ls getzazu-sdk-*.tgz)
+          TARBALL=$(ls manza-sdk-*.tgz)
           # access, provenance, and registry are configured under
           # `publishConfig` in package.json — npm reads them from the
           # tarball's manifest, no CLI flags needed.

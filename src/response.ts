@@ -1,7 +1,7 @@
-// Mirrors lib/zazu/response.rb. Thin wrapper over Fetch's Response so
+// Mirrors lib/manza/response.rb. Thin wrapper over Fetch's Response so
 // callers don't have to care about JSON parsing, header casing, etc.
 
-export class ZazuResponse<TBody = unknown> {
+export class ManzaResponse<TBody = unknown> {
   readonly status: number;
   readonly headers: Headers;
   readonly body: TBody;

@@ -1,7 +1,7 @@
-// Mirror of spec/zazu/resources/beneficiaries_spec.rb.
+// Mirror of spec/manza/resources/beneficiaries_spec.rb.
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { Page, Zazu } from "../../src/index.js";
+import { Manza, Page } from "../../src/index.js";
 import { startServer } from "../cassette-replay.js";
 import { CASSETTE_BASE_URL, FIXTURE_IDS, TEST_API_KEY } from "../fixture-ids.js";
 
@@ -16,17 +16,17 @@ const CASSETTES = [
 
 describe("Beneficiaries (cassette replay)", () => {
   let server: Awaited<ReturnType<typeof startServer>> | undefined;
-  let zazu: Zazu;
+  let manza: Manza;
 
   beforeAll(async () => {
     server = await startServer(CASSETTES);
-    zazu = new Zazu({ apiKey: TEST_API_KEY, baseUrl: CASSETTE_BASE_URL });
+    manza = new Manza({ apiKey: TEST_API_KEY, baseUrl: CASSETTE_BASE_URL });
   });
 
   afterAll(() => server?.close());
 
   test("#list returns a Page of beneficiaries with their bank accounts", async () => {
-    const page = await zazu.beneficiaries.list();
+    const page = await manza.beneficiaries.list();
 
     expect(page).toBeInstanceOf(Page);
     const first = page.data[0] as { external_accounts: unknown };
@@ -34,7 +34,7 @@ describe("Beneficiaries (cassette replay)", () => {
   });
 
   test("#get returns a single beneficiary", async () => {
-    const response = await zazu.beneficiaries.get(FIXTURE_IDS.ZAZU_FIXTURE_BENEFICIARY_ID);
+    const response = await manza.beneficiaries.get(FIXTURE_IDS.MANZA_FIXTURE_BENEFICIARY_ID);
 
     const body = response.body as { id: unknown; external_accounts: unknown };
     expect(typeof body.id).toBe("string");
@@ -42,7 +42,7 @@ describe("Beneficiaries (cassette replay)", () => {
   });
 
   test("#create creates a business beneficiary", async () => {
-    const response = await zazu.beneficiaries.create({
+    const response = await manza.beneficiaries.create({
       beneficiary_type: "business",
       company_name: "Zazu Fixture Beneficiary - spec (zazu-ruby-fixture)",
       email: "fixture-beneficiary-spec@example.com",
@@ -54,8 +54,8 @@ describe("Beneficiaries (cassette replay)", () => {
   });
 
   test("#listExternalAccounts returns a Page of the beneficiary's bank accounts", async () => {
-    const page = await zazu.beneficiaries.listExternalAccounts(
-      FIXTURE_IDS.ZAZU_FIXTURE_CREATED_BENEFICIARY_ID,
+    const page = await manza.beneficiaries.listExternalAccounts(
+      FIXTURE_IDS.MANZA_FIXTURE_CREATED_BENEFICIARY_ID,
     );
 
     expect(page).toBeInstanceOf(Page);
@@ -63,9 +63,9 @@ describe("Beneficiaries (cassette replay)", () => {
   });
 
   test("#getExternalAccount returns a single external account", async () => {
-    const response = await zazu.beneficiaries.getExternalAccount(
-      FIXTURE_IDS.ZAZU_FIXTURE_CREATED_BENEFICIARY_ID,
-      FIXTURE_IDS.ZAZU_FIXTURE_EXTERNAL_ACCOUNT_ID,
+    const response = await manza.beneficiaries.getExternalAccount(
+      FIXTURE_IDS.MANZA_FIXTURE_CREATED_BENEFICIARY_ID,
+      FIXTURE_IDS.MANZA_FIXTURE_EXTERNAL_ACCOUNT_ID,
     );
 
     const body = response.body as { id: unknown };
@@ -73,10 +73,10 @@ describe("Beneficiaries (cassette replay)", () => {
   });
 
   test("#createExternalAccount adds a bank account to the beneficiary", async () => {
-    const response = await zazu.beneficiaries.createExternalAccount(
-      FIXTURE_IDS.ZAZU_FIXTURE_CREATED_BENEFICIARY_ID,
+    const response = await manza.beneficiaries.createExternalAccount(
+      FIXTURE_IDS.MANZA_FIXTURE_CREATED_BENEFICIARY_ID,
       {
-        account_number: FIXTURE_IDS.ZAZU_FIXTURE_NEW_ACCOUNT_NUMBER,
+        account_number: FIXTURE_IDS.MANZA_FIXTURE_NEW_ACCOUNT_NUMBER,
         name: "Fixture Secondary Account",
       },
     );

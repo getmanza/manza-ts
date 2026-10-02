@@ -1,4 +1,4 @@
-// Mirror of spec/zazu/transfer_authorization_spec.rb.
+// Mirror of spec/manza/transfer_authorization_spec.rb.
 //
 // Fixed test vector shared across every SDK in the family — each
 // implementation must produce exactly these hex digests from these
@@ -7,7 +7,7 @@
 //   printf '%s' '<input>' | openssl dgst -sha256 -hmac 'whsec_test_vector_secret'
 
 import { describe, expect, test } from "bun:test";
-import { TransferAuthorization, ZazuArgumentError } from "../src/index.js";
+import { ManzaArgumentError, TransferAuthorization } from "../src/index.js";
 
 const SECRET = "whsec_test_vector_secret";
 const FIELDS = {
@@ -76,7 +76,7 @@ describe("TransferAuthorization.signatureInput", () => {
         amount: 2500 as unknown as string,
         payee: "ext:x",
       }),
-    ).toThrow(ZazuArgumentError);
+    ).toThrow(ManzaArgumentError);
   });
 });
 
@@ -84,10 +84,10 @@ describe("TransferAuthorization.payeeFor", () => {
   test("refuses both ids at once", () => {
     expect(() =>
       TransferAuthorization.payeeFor({ external_account_id: "a", destination_account_id: "b" }),
-    ).toThrow(ZazuArgumentError);
+    ).toThrow(ManzaArgumentError);
   });
 
   test("refuses neither id", () => {
-    expect(() => TransferAuthorization.payeeFor({})).toThrow(ZazuArgumentError);
+    expect(() => TransferAuthorization.payeeFor({})).toThrow(ManzaArgumentError);
   });
 });

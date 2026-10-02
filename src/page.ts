@@ -1,10 +1,10 @@
-// Mirrors lib/zazu/page.rb. Cursor-based pagination wrapper.
+// Mirrors lib/manza/page.rb. Cursor-based pagination wrapper.
 //
 // Hard cap on per-page size matches the Ruby SDK: callers cannot ask
 // for more than MAX_PER_PAGE items in a single request.
 
-import { ZazuArgumentError } from "./errors.js";
-import type { ZazuResponse } from "./response.js";
+import { ManzaArgumentError } from "./errors.js";
+import type { ManzaResponse } from "./response.js";
 
 export const MAX_PER_PAGE = 100;
 
@@ -20,13 +20,13 @@ export class Page<T> {
   readonly data: T[];
   readonly hasMore: boolean;
   readonly nextCursor: string | null;
-  readonly response: ZazuResponse<PageBody<T>>;
+  readonly response: ManzaResponse<PageBody<T>>;
   readonly #fetcher: PageFetcher<T>;
 
-  constructor(response: ZazuResponse<PageBody<T>>, fetcher: PageFetcher<T>) {
+  constructor(response: ManzaResponse<PageBody<T>>, fetcher: PageFetcher<T>) {
     const body = response.body;
     if (!body || !Array.isArray(body.data)) {
-      throw new ZazuArgumentError(
+      throw new ManzaArgumentError(
         "Page response body has no `data` array — was this a list endpoint?",
         { body },
       );

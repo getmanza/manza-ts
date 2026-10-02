@@ -1,4 +1,4 @@
-// Mirrors lib/zazu/resources/transfer_drafts.rb.
+// Mirrors lib/manza/resources/transfer_drafts.rb.
 //
 // API-initiated transfers. Creating a draft never executes a transfer
 // by itself. A draft inside the entity's machine-authorization
@@ -10,8 +10,8 @@
 // approves it. Poll get() (status: requested → processing →
 // completed / failed) or subscribe to the `transfer.executed` webhook.
 
-import { ZazuArgumentError } from "../errors.js";
-import type { ZazuResponse } from "../response.js";
+import { ManzaArgumentError } from "../errors.js";
+import type { ManzaResponse } from "../response.js";
 import { ResourceBase } from "./base.js";
 
 export class TransferDrafts extends ResourceBase {
@@ -19,13 +19,13 @@ export class TransferDrafts extends ResourceBase {
   // (external) or destination_account_id (own-account move). Optional:
   // external_account_id, currency_code, payment_reference,
   // internal_notes, client_reference (unique per entity, ≤128 chars;
-  // a duplicate raises ZazuConflictError whose paymentId names the
+  // a duplicate raises ManzaConflictError whose paymentId names the
   // existing draft).
-  create(attributes: Record<string, unknown>): Promise<ZazuResponse> {
+  create(attributes: Record<string, unknown>): Promise<ManzaResponse> {
     return this.httpPost("api/transfer_drafts", attributes);
   }
 
-  get(id: string): Promise<ZazuResponse> {
+  get(id: string): Promise<ManzaResponse> {
     return this.httpGet(this.encodePath("api/transfer_drafts", id));
   }
 
@@ -38,9 +38,9 @@ export class TransferDrafts extends ResourceBase {
   authorize(
     id: string,
     params: { authorization_id: string; signature: string },
-  ): Promise<ZazuResponse> {
+  ): Promise<ManzaResponse> {
     if (!params.signature || params.signature.trim() === "") {
-      throw new ZazuArgumentError("signature cannot be blank");
+      throw new ManzaArgumentError("signature cannot be blank");
     }
     return this.httpPost(this.encodePath("api/transfer_drafts", id, "authorize"), {
       authorization_id: params.authorization_id,
@@ -53,7 +53,7 @@ export class TransferDrafts extends ResourceBase {
   decline(
     id: string,
     params: { authorization_id: string; reason?: string | null | undefined },
-  ): Promise<ZazuResponse> {
+  ): Promise<ManzaResponse> {
     const body: Record<string, unknown> = { authorization_id: params.authorization_id };
     if (params.reason !== undefined && params.reason !== null) body.reason = params.reason;
     return this.httpPost(this.encodePath("api/transfer_drafts", id, "decline"), body);
