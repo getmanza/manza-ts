@@ -32,7 +32,7 @@
     "format:check": "biome format .",
     "check:all": "bun run typecheck && bun run lint && bun test",
     "fetch:cassettes": "bun scripts/fetch-cassettes.ts",
-    "release": "bun scripts/release.ts"
+    "release": "bin/release"
   },
   "keywords": [
     "zazu",

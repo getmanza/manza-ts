@@ -59,6 +59,10 @@ jobs:
             echo "::error::Tag version ($TAG_VERSION) does not match package version ($PKG_VERSION)"
             exit 1
           fi
+          if ! grep -qx "export const VERSION = \"$TAG_VERSION\";" src/version.ts; then
+            echo "::error::src/version.ts does not carry $TAG_VERSION (bin/release writes it via scripts/version)"
+            exit 1
+          fi
 
       - run: bun install --frozen-lockfile
 

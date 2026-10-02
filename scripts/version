@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# bin/release adapter: print the current version, or write a new one into every
+# tracked file that carries it (package.json and the VERSION constant).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+if [ $# -eq 0 ]; then
+  sed -nE 's/^  "version": "([^"]+)",$/\1/p' package.json
+  exit 0
+fi
+
+sed -i.bak -E "s/^  \"version\": \"[^\"]+\",$/  \"version\": \"$1\",/" package.json
+sed -i.bak -E "s/^export const VERSION = \"[^\"]+\";$/export const VERSION = \"$1\";/" src/version.ts
+rm -f package.json.bak src/version.ts.bak

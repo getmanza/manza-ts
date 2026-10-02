@@ -12,7 +12,7 @@ TypeScript SDK for the Zazu API. Runtime-agnostic — runs on Node 20+, Bun, Den
 | Type-check | `tsc --noEmit` | Bun doesn't do this; we keep tsc for it |
 | HTTP | Native `fetch` + `AbortController` | No undici / node-fetch fallback |
 | Cassette replay (tests) | msw + `js-yaml` | Reads zazu-ruby's release tarball |
-| Release | `bun scripts/release.ts X.Y.Z` | Tag-driven, OIDC trusted publishing |
+| Release | `bin/release` | zazu SDK release kit (byte-identical across SDK repos; repo-specific bits in `scripts/version` + `scripts/release-check`); OIDC trusted publishing |
 
 ## Public API surface
 
@@ -122,9 +122,11 @@ bun run lint:fix                 # auto-apply Biome safe fixes
 # Build verification
 bun run build                    # produces dist/index.js (ESM), .cjs, .d.ts
 
-# Release (after PR merge)
-bun scripts/release.ts X.Y.Z
-# → bumps package.json, pushes main, creates GH release
+# Release (after PR merge, from a clean, up-to-date main)
+bin/release list        # last releases + what patch/minor/major would give
+bin/release --dry-run   # version + changes since the last tag, publishes nothing
+bin/release minor       # or patch (default), major, an explicit 0.3.0; --force re-creates
+# → bumps package.json + src/version.ts, runs check:all, pushes main, publishes the GH release
 # → release.yml workflow handles npm publish + sigstore attestation
 ```
 
