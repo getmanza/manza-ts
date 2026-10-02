@@ -13,8 +13,8 @@ describe("Manza", () => {
   });
 
   test("strips trailing slash from baseUrl", () => {
-    const z = new Manza({ apiKey: "test", baseUrl: "https://staging.manza.ma///" });
-    expect(z.baseUrl).toBe("https://staging.manza.ma");
+    const z = new Manza({ apiKey: "test", baseUrl: "https://staging.manza.example///" });
+    expect(z.baseUrl).toBe("https://staging.manza.example");
   });
 
   test("defaults baseUrl to Morocco production (ma.manza.finance)", () => {

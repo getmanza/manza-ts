@@ -1,6 +1,6 @@
 # @manza/sdk
 
-TypeScript SDK for the [Manza API](https://manza.ma). Runtime-agnostic — runs on Node 20+, Bun, Deno, browsers, and Cloudflare Workers using native `fetch`.
+TypeScript SDK for the [Manza API](https://get-manza.com). Runtime-agnostic — runs on Node 20+, Bun, Deno, browsers, and Cloudflare Workers using native `fetch`.
 
 ```bash
 bun add @manza/sdk    # or npm / pnpm / yarn
