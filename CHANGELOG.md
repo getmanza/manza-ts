@@ -13,7 +13,8 @@ Renamed from Zazu to Manza; the first release under the new name is 1.0.0.
 
 - Package `@getzazu/sdk` is now `@manza/sdk`.
 - `Zazu` client is now `Manza`; every `Zazu*Error` is now `Manza*Error`
-  (`ZazuError` → `ManzaError`, `ZazuResponse` → `ManzaResponse`, …).
+  (`ZazuError` → `ManzaError`, `ZazuValidationError` → `ManzaValidationError`, …).
+- `ZazuResponse` is now `ManzaResponse`.
 - The version header is `Manza-Version` (was `Zazu-Version`).
 - The User-Agent is `manza-ts/<version>` (was `zazu-ts/<version>`).
 - Repository moved to `getmanza/manza-ts`.

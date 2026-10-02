@@ -3,7 +3,7 @@
 // commit cassettes into both repos.
 //
 //   bun scripts/fetch-cassettes.ts            # pinned release (PINNED_TAG)
-//   bun scripts/fetch-cassettes.ts v1.0.1      # specific tag
+//   bun scripts/fetch-cassettes.ts v1.0.0      # specific tag
 //
 // Cassettes land under test/fixtures/cassettes/.
 

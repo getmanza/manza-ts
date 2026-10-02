@@ -18,9 +18,9 @@ TypeScript SDK for the Manza API. Runtime-agnostic — runs on Node 20+, Bun, De
 
 Mirrors `manza-ruby` one-to-one:
 
-- `Manza` client, six resources: `accounts`, `customers`, `entity`, `invoices`, `paymentLinks`, `webhookEndpoints`
+- `Manza` client, ten resources: `accounts`, `beneficiaries`, `checkoutSessions`, `customers`, `entity`, `invoices`, `payeeTrustRequests`, `paymentLinks`, `transferDrafts`, `webhookEndpoints`
 - Cursor-based `Page<T>` with async iterator (`page.records()`)
-- 9-class `ManzaError` hierarchy — discriminate via `instanceof`, never status-code matching
+- 10-class `ManzaError` hierarchy — discriminate via `instanceof`, never status-code matching
 - Wire-format response bodies are returned as-is (snake_case keys). **No auto-camelCasing.**
 
 ## How to work in this codebase
@@ -37,7 +37,7 @@ Mirrors `manza-ruby` one-to-one:
 - **No long-lived `NPM_TOKEN`.** Releases publish via npm OIDC trusted publishing through the `release` GitHub environment. Verify the binding on https://www.npmjs.com/package/@manza/sdk/access if it ever drifts.
 - **Cassettes come from manza-ruby.** `bun run fetch:cassettes` downloads the tarball. The Ruby SDK records, every other SDK replays.
 - **Snake-case wire format.** API request/response bodies use snake_case. Don't transform them.
-- **No new error classes without updating manza-ruby.** The 9-class hierarchy is shared across SDKs. Adding to it means coordinating both repos.
+- **No new error classes without updating manza-ruby.** The 10-class hierarchy is shared across SDKs. Adding to it means coordinating both repos.
 - **Never escape backticks in PR bodies.** With `<<'EOF'` (single-quoted heredoc) the shell passes everything through verbatim — typing `` \` `` produces literal `` \` `` in the rendered PR. See "PR descriptions" below.
 
 ## PR descriptions
