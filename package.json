@@ -1,6 +1,6 @@
 {
   "name": "@getmanza/sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "TypeScript SDK for the Manza API. Runtime-agnostic (Node, Bun, Deno, browsers, Cloudflare Workers).",
   "type": "module",
   "main": "./dist/index.cjs",
