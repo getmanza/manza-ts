@@ -28,7 +28,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: ".bun-version"
 
       - run: bun install --frozen-lockfile
       - run: bun run fetch:cassettes
@@ -48,7 +48,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: ".bun-version"
 
       - name: Verify tag matches package version
         run: |

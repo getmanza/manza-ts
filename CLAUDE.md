@@ -7,7 +7,7 @@ TypeScript SDK for the Manza API. Runtime-agnostic — runs on Node 20+, Bun, De
 | Concern | Tool | Notes |
 |---|---|---|
 | Language | TypeScript 5.x, strict + `exactOptionalPropertyTypes` | `tsconfig.json` |
-| Build / package mgmt / test runner | Bun 1.3+ | `bun build`, `bun test`, `bun install` |
+| Build / package mgmt / test runner | Bun 1.4.2+ | `bun build`, `bun test`, `bun install` |
 | Lint + format | Biome 2.x | `biome.json`. Replaces eslint + prettier |
 | Type-check | `tsc --noEmit` | Bun doesn't do this; we keep tsc for it |
 | HTTP | Native `fetch` + `AbortController` | No undici / node-fetch fallback |
