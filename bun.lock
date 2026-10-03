@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@manza/sdk",
+      "name": "@getmanza/sdk",
       "devDependencies": {
         "@biomejs/biome": "^2.4.14",
         "@types/bun": "latest",
