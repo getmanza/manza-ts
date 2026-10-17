@@ -28,7 +28,7 @@ Mirrors `manza-ruby` one-to-one:
 ## How to work in this codebase
 
 1. **Tests come first.** Every change to `src/` ships with a test. Cassette-replay tests are the contract — they enforce the same wire-format across Ruby, TS, and future SDKs.
-2. **Use the SDK's primitives.** `Page<T>`, `ManzaError` subclasses, `fixture_id()` helper. Don't hand-roll fetch loops or parse `error.message`.
+2. **Use the SDK's primitives.** `Page<T>`, `ManzaError` subclasses, `FIXTURE_IDS` in `test/fixture-ids.ts`. Don't hand-roll fetch loops or parse `error.message`.
 3. **Snake-case stays.** Response keys are wire-format. We don't camelCase them on the way out.
 4. **Lint must be green.** `bun run lint` runs Biome with `--error-on-warnings`. Don't add `// biome-ignore` to silence — fix the issue.
 
