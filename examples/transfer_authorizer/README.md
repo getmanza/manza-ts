@@ -43,7 +43,7 @@ Every script runs with [Bun](https://bun.sh) as shown, or on Node 20.12+ with `n
 
 ## Run
 
-Terminal 1, the authorizer (point your tunnel at `PORT`, 4599 by default):
+Terminal 1, the authorizer. It listens on `127.0.0.1:PORT` (4599 by default), IPv4 loopback only, so point your tunnel at `127.0.0.1:4599` or `localhost:4599`:
 
 ```bash
 bun server.ts
