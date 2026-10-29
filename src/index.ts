@@ -37,3 +37,10 @@ export {
   TransferAuthorization,
 } from "./transfer_authorization.js";
 export { VERSION } from "./version.js";
+export {
+  Webhook,
+  type WebhookConstructEventParams,
+  type WebhookHeaders,
+  type WebhookSignParams,
+  type WebhookVerifyParams,
+} from "./webhook.js";
