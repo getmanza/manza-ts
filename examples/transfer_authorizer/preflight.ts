@@ -407,7 +407,8 @@ export class Preflight {
 }
 
 function describe(error: ManzaError): string {
-  return `${error.name} ${error.type ?? error.status}: ${error.message}`;
+  const kind = error.type ?? error.status; // neither on a connection failure
+  return `${error.name}${kind === undefined || kind === null ? "" : ` ${kind}`}: ${error.message}`;
 }
 
 function keyFix(error: ManzaError, keyVar: string, scope: string, idVar?: string): string {

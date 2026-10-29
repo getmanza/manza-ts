@@ -160,6 +160,15 @@ describe("transfer authorizer preflight", () => {
     expect(failures(lines)[0]).toContain("MANZA_CREATOR_API_KEY");
   });
 
+  test("names a connection failure without an undefined status", async () => {
+    env.MANZA_BASE_URL = "https://unstubbed.manza.example";
+    const { lines } = await run();
+
+    expect(failures(lines)[0]).toContain("key A cannot read the entity: ManzaConnectionError: ");
+    expect(failures(lines)[0]).toContain("check MANZA_BASE_URL and the network");
+    expect(lines.join("\n")).not.toContain("undefined");
+  });
+
   test("fails when no authorizer is enrolled", async () => {
     const { lines } = await run({ authorizer: error(404, "not_found_error") });
 

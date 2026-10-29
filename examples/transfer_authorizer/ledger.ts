@@ -15,6 +15,7 @@ import {
   renameSync,
   rmSync,
   writeFileSync,
+  writeSync,
 } from "node:fs";
 
 export interface LedgerEntry {
@@ -63,21 +64,47 @@ export class Ledger {
     return json.trim() === "" ? {} : (JSON.parse(json) as Record<string, LedgerEntry>);
   }
 
-  // Node has no flock: creating the lock file exclusively ("wx") is the lock.
+  // Node has no flock: creating the lock file exclusively ("wx") is the
+  // lock, and it holds the writer's pid so a lock left by a process that
+  // died is taken over instead of blocking every later run.
   #lock(): () => void {
     const lock = `${this.path}.lock`;
     const deadline = Date.now() + LOCK_TIMEOUT_MS;
     for (;;) {
       try {
-        closeSync(openSync(lock, "wx", 0o600));
+        const fd = openSync(lock, "wx", 0o600);
+        writeSync(fd, String(process.pid));
+        closeSync(fd);
         return () => rmSync(lock, { force: true });
       } catch (err) {
         if ((err as { code?: string }).code !== "EEXIST") throw err;
+        if (!holderAlive(lock)) {
+          rmSync(lock, { force: true });
+          continue;
+        }
         if (Date.now() >= deadline) {
           throw new Error(`${lock} is still held: delete it if no create_transfer.ts is running`);
         }
         Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
       }
     }
+  }
+}
+
+// false when the lock names a pid that no longer runs. A lock still being
+// written (no pid yet) counts as alive.
+function holderAlive(lock: string): boolean {
+  let pid: number;
+  try {
+    pid = Number.parseInt(readFileSync(lock, "utf8"), 10);
+  } catch {
+    return true;
+  }
+  if (!Number.isInteger(pid) || pid <= 0) return true;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (err) {
+    return (err as { code?: string }).code === "EPERM";
   }
 }

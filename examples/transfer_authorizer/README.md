@@ -23,7 +23,7 @@ cp .env.example .env                   # fill in both keys, the signing secret, 
 bun preflight.ts                       # or: bun preflight.ts 250.00, the amount you will send
 ```
 
-Every script runs with [Bun](https://bun.sh) as shown, or on Node 20.12+ with `npx tsx` in place of `bun` (`npx tsx preflight.ts`). Plain `node` cannot load the SDK's TypeScript source. The scripts read `.env` from this directory; a variable already set in your shell wins.
+Every script runs with [Bun](https://bun.sh) as shown, or on Node 20.12+ with `npx tsx` in place of `bun` (`npx tsx preflight.ts`). Plain `node` cannot load the SDK's TypeScript source. The scripts read `.env` from this directory, and its values win over variables already exported in your shell.
 
 ## Preflight
 
