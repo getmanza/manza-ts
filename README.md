@@ -97,7 +97,7 @@ A draft inside your entity's authorization envelope (trusted payee, or a new one
    await manza.webhookEndpoints.create({ url: "https://your-name.ngrok.app/", events: ["transfer.executed"] });
    ```
 
-5. **Enrol it in the app**: Settings → Developer → Transfer approval. Pick the endpoint, the currency and both limits, confirm with your two-factor code, and copy the signing secret: it is shown once.
+5. **Enrol it in the app**: Settings → Developer → Transfer approval. Pick the endpoint, the currency and both limits, confirm with your two-factor code, and copy the signing secret: it is shown once. Enrolment is what routes the challenges: `payment.authorization_requested` goes only to the enrolled endpoint and cannot be subscribed to through `events`.
 6. **Allow new payees, or trust each payee.** Turn on *Approve transfers to new payees* at enrolment (or later, same page, with your two-factor code) and set the *Limit per transfer to a new payee*. Your authorizer may then approve a transfer to bank details your workspace never trusted, up to that limit, and its signature trusts them: the webhook's `payment.payee_trusted` is `false` for such a transfer. Bank details whose trust was revoked, or that were edited after trusting, still go to your approvers. Without the option, an approver marks the beneficiary's bank account as trusted from the Beneficiaries list, or you ask them to:
 
    ```ts
