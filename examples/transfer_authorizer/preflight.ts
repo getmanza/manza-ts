@@ -12,9 +12,12 @@ import { loadEnv } from "./env.js";
 import {
   Manza,
   ManzaAuthenticationError,
+  ManzaConnectionError,
   ManzaError,
   ManzaForbiddenError,
   ManzaNotFoundError,
+  ManzaRateLimitError,
+  ManzaServerError,
 } from "./sdk.js";
 
 const SECRET_MIN_DAYS = 7;
@@ -425,7 +428,12 @@ function keyFix(error: ManzaError, keyVar: string, scope: string, idVar?: string
     return `give the key the ${scope} scope, or add this machine's address to its IP allowlist`;
   }
   if (error instanceof ManzaNotFoundError) return `check ${idVar ?? "MANZA_BASE_URL"}`;
-  return "check MANZA_BASE_URL and the network, then rerun";
+  if (error instanceof ManzaRateLimitError || error instanceof ManzaServerError) {
+    return "the API is busy or failing: rerun in a minute";
+  }
+  if (error instanceof ManzaConnectionError)
+    return "check MANZA_BASE_URL and the network, then rerun";
+  return "look the error type up in the transfer authorization docs' errors table";
 }
 
 function hostOf(url: unknown): string {

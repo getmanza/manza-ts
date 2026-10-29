@@ -46,13 +46,23 @@ export class Ledger {
 
   // The entry for `clientReference`, or null.
   find(clientReference: string): LedgerEntry | null {
-    return this.#read()[clientReference] ?? null;
+    const entries = this.#read();
+    return Object.hasOwn(entries, clientReference)
+      ? (entries[clientReference] as LedgerEntry)
+      : null;
   }
 
   #read(): Record<string, LedgerEntry> {
-    if (!existsSync(this.path)) return {};
+    // A prototype-less map: a client_reference such as "constructor" or
+    // "__proto__" is an ordinary key, never an inherited member.
+    const entries: Record<string, LedgerEntry> = Object.create(null);
+    if (!existsSync(this.path)) return entries;
     const json = readFileSync(this.path, "utf8");
-    return json.trim() === "" ? {} : (JSON.parse(json) as Record<string, LedgerEntry>);
+    if (json.trim() === "") return entries;
+    for (const [key, entry] of Object.entries(JSON.parse(json) as Record<string, LedgerEntry>)) {
+      entries[key] = entry;
+    }
+    return entries;
   }
 
   // Node has no flock, so the lock is a file naming its holder's pid:

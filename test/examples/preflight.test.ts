@@ -309,9 +309,17 @@ describe("transfer authorizer preflight", () => {
 
   test("compares amounts exactly, not as floats", async () => {
     authorizer.per_transfer_limit = "0.3";
-    const { lines } = await run({ amount: "0.30" });
+    // As a float this rounds onto the limit and would pass.
+    const { lines } = await run({ amount: "0.30000000000000000001" });
 
-    expect(failures(lines)).toEqual([]);
+    expect(failures(lines)[0]).toContain("limit per transfer");
+  });
+
+  test("gives a retry hint, not a network one, when the API is busy or failing", async () => {
+    const { lines } = await run({ entity: error(503, "server_error") });
+
+    expect(failures(lines)[0]).toContain("rerun in a minute");
+    expect(failures(lines)[0]).not.toContain("network");
   });
 
   test("warns that a new payee needs the toggle, which the API does not show", async () => {

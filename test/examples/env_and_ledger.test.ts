@@ -51,6 +51,15 @@ describe("transfer authorizer example files", () => {
     expect(ledger.find("po_2")).toBeNull();
   });
 
+  test("the ledger finds only entries it recorded, whatever the key", () => {
+    const ledger = new Ledger(join(dir, "ledger.json"));
+    ledger.record("__proto__", ENTRY);
+
+    expect(ledger.find("constructor")).toBeNull();
+    expect(ledger.find("toString")).toBeNull();
+    expect(ledger.find("__proto__")).toEqual(ENTRY);
+  });
+
   test("the ledger takes over a lock left by a process that died", () => {
     const path = join(dir, "ledger.json");
     writeFileSync(`${path}.lock`, "2147483646"); // no such pid

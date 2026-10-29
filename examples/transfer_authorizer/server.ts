@@ -56,4 +56,5 @@ createServer((req, res) => {
         res.writeHead(500, { "content-type": "text/plain" }).end("error");
       });
   });
-}).listen(port, () => console.log(`authorizer listening on http://localhost:${port}`));
+  // Loopback only: the tunnel connects locally, nothing else should reach it.
+}).listen(port, "127.0.0.1", () => console.log(`authorizer listening on http://127.0.0.1:${port}`));
