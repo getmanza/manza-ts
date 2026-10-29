@@ -37,7 +37,7 @@ export function stubFetch() {
     if (!replies || replies.length === 0) throw new TypeError(`unstubbed request: ${key}`);
     // The last reply repeats; earlier ones are used once each.
     const reply = (replies.length > 1 ? replies.shift() : replies[0]) as StubReply;
-    return new Response(JSON.stringify(reply.body ?? {}), {
+    return new Response(reply.body === undefined ? "" : JSON.stringify(reply.body), {
       status: reply.status,
       headers: { "content-type": "application/json", ...reply.headers },
     });

@@ -1,5 +1,5 @@
-// Checks every setup step before you create a transfer, and says how to fix
-// the ones that fail:
+// Checks what the API shows of each setup step before you create a transfer,
+// says how to fix the ones that fail, and flags what it cannot see:
 //
 //   bun preflight.ts          # for a 10.00 transfer
 //   bun preflight.ts 250.00   # or, on Node: npx tsx preflight.ts 250.00
@@ -203,6 +203,11 @@ export class Preflight {
 
     if (authorizer.status === "active") {
       this.#pass("transfer authorizer is active");
+      // The read also answers transfers:read and transfers:write keys.
+      this.#warn(
+        "key B can read the authorizer, which does not show it can authorize",
+        "check by hand that MANZA_AUTHORIZER_API_KEY has the transfers:authorize scope and an IP allowlist",
+      );
     } else {
       const reason = authorizer.suspension_reason ?? "";
       this.#fail(
@@ -300,7 +305,9 @@ export class Preflight {
       );
     }
     const host = hostOf(endpoint.url);
-    const unstable = UNSTABLE_TUNNEL_HOSTS.find((domain) => host.endsWith(domain));
+    const unstable = UNSTABLE_TUNNEL_HOSTS.find(
+      (domain) => host === domain || host.endsWith(`.${domain}`),
+    );
     if (!unstable) return;
 
     this.#warn(
@@ -432,5 +439,6 @@ function hostOf(url: unknown): string {
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   loadEnv();
   const ok = await new Preflight({ amount: process.argv[2] ?? "10.00" }).run();
-  process.exit(ok ? 0 : 1);
+  // exitCode, not exit(): let stdout drain into a pipe first.
+  process.exitCode = ok ? 0 : 1;
 }

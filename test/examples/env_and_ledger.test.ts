@@ -1,7 +1,7 @@
 // The example's .env loader and ledger lock.
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadEnv } from "../../examples/transfer_authorizer/env.js";
@@ -58,5 +58,19 @@ describe("transfer authorizer example files", () => {
     new Ledger(path).record("po_1", ENTRY);
 
     expect(new Ledger(path).find("po_1")).toEqual(ENTRY);
+  });
+
+  test("two takeovers of the same dead lock do not both win", () => {
+    const path = join(dir, "ledger.json");
+    writeFileSync(`${path}.lock`, "2147483646");
+    const a = new Ledger(path);
+    const b = new Ledger(path);
+
+    a.record("po_1", ENTRY);
+    b.record("po_2", { ...ENTRY, payment_id: "p2" });
+
+    expect(a.find("po_1")).toEqual(ENTRY);
+    expect(a.find("po_2")?.payment_id).toBe("p2");
+    expect(existsSync(`${path}.lock`)).toBe(false);
   });
 });

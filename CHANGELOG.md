@@ -39,8 +39,10 @@ Mirrors manza-ruby 1.3.0 (with 1.2.0) and replays `cassettes-v1.3.0`.
   webhook, checks a JSON ledger, signs and authorizes (or declines, also
   for a new payee with `ALLOW_NEW_PAYEES=false`) and retries 409
   `authorization_busy`; `create_transfer.ts` prints where the draft was
-  routed and why; `preflight.ts` checks every setup step and prints the
-  fix. Not shipped in the npm package.
+  routed and why; `preflight.ts` checks what the API shows of each setup
+  step, prints the fix for each that fails and warns about what it cannot
+  see (key B's scope and IP allowlist, the new-payee option). Not shipped
+  in the npm package.
 - README: "Machine-authorized transfers" with "Setup, step by step", the
   webhook verifier and the signing snippet.
 

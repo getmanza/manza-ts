@@ -6,7 +6,7 @@ Two processes and a shared ledger, matching the two-key model of [transfer autho
 |---|---|---|
 | `create_transfer.ts` | Creates a transfer draft, records it in `ledger.json` from the API's response | A (`transfers:write`) |
 | `server.ts` / `authorizer.ts` | Receives `payment.authorization_requested`, verifies it, checks the ledger, signs and authorizes (or declines) | B (`transfers:authorize`) |
-| `preflight.ts` | Checks every setup step and prints the fix for each that fails | A and B |
+| `preflight.ts` | Checks what the API shows of each setup step, prints the fix for each that fails and flags what it cannot see | A and B |
 | `ledger.ts` | Your own record of what you created, keyed by `client_reference`. Swap it for your database | — |
 | `routing.ts` | Says in words where the API routed a new draft | — |
 
@@ -33,7 +33,7 @@ Every script runs with [Bun](https://bun.sh) as shown, or on Node 20.12+ with `n
 |---|---|
 | Keys | any of `MANZA_CREATOR_API_KEY`, `MANZA_AUTHORIZER_API_KEY`, `MANZA_ACCOUNT_ID`, `MANZA_BENEFICIARY_ID` is empty, or the two keys are the same |
 | Key A reaches the API | `entity.get` with key A is refused: a wrong key, a missing scope, or this machine outside its IP allowlist |
-| Transfer authorizer | `transferAuthorizer.get` with key B is not `active`: prints the `suspension_reason` and its fix, or that nothing is enrolled |
+| Transfer authorizer | `transferAuthorizer.get` with key B is not `active`: prints the `suspension_reason` and its fix, or that nothing is enrolled. When it is active it warns: the read also works with `transfers:read`, so check key B's `transfers:authorize` scope and IP allowlist by hand |
 | Currency | `MANZA_ACCOUNT_ID`'s currency is not the enrolled currency |
 | Secret expiry | `secret_expires_at` is less than 7 days away |
 | Signing secret | `MANZA_AUTHORIZER_SECRET` is empty |

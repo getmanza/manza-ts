@@ -32,11 +32,22 @@ const handle = createAuthorizer({
 });
 
 const port = Number(process.env.PORT || 4599);
+const MAX_BODY_BYTES = 1024 * 1024;
 
 createServer((req, res) => {
   // The signature covers the raw bytes: read the body as is, never re-serialize it.
+  // Capped: anyone can reach the tunnel, and a webhook is a few kilobytes.
   const chunks: Buffer[] = [];
-  req.on("data", (chunk: Buffer) => chunks.push(chunk));
+  let size = 0;
+  req.on("data", (chunk: Buffer) => {
+    size += chunk.length;
+    if (size > MAX_BODY_BYTES) {
+      res.writeHead(413, { "content-type": "text/plain", connection: "close" }).end("too large");
+      req.destroy();
+      return;
+    }
+    chunks.push(chunk);
+  });
   req.on("end", () => {
     handle(Buffer.concat(chunks).toString("utf8"), req.headers)
       .then(({ status, body }) => res.writeHead(status, { "content-type": "text/plain" }).end(body))

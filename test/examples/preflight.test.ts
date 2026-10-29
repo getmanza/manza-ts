@@ -87,6 +87,8 @@ describe("transfer authorizer preflight", () => {
 
   const failures = (lines: string[]) => lines.filter((l) => l.startsWith("✗"));
   const warnings = (lines: string[]) => lines.filter((l) => l.startsWith("!"));
+  const warning = (lines: string[], text: string) =>
+    warnings(lines).find((l) => l.includes(text)) ?? "";
 
   test("passes every step when the setup is complete, reading with the right key", async () => {
     const { ok, lines } = await run();
@@ -269,8 +271,26 @@ describe("transfer authorizer preflight", () => {
     const { ok, lines } = await run();
 
     expect(ok).toBe(true);
-    expect(warnings(lines)[0]).toContain("ngrok-free.app");
-    expect(warnings(lines)[0]).toContain("reserved domain");
+    expect(warning(lines, "ngrok-free.app")).toContain("reserved domain");
+  });
+
+  test("does not mistake a host that merely ends in a tunnel domain for one", async () => {
+    endpoint.url = "https://notngrok-free.app/";
+    const { lines } = await run();
+
+    expect(warning(lines, "tunnel restarts")).toBe("");
+  });
+
+  // transferAuthorizer.get also answers transfers:read and transfers:write,
+  // so a passing read does not prove key B can authorize.
+  test("warns that it cannot see key B's transfers:authorize scope or IP allowlist", async () => {
+    const { ok, lines } = await run();
+
+    expect(ok).toBe(true);
+    const line = warning(lines, "key B");
+    for (const part of ["transfers:authorize", "IP allowlist", "MANZA_AUTHORIZER_API_KEY"]) {
+      expect(line).toContain(part);
+    }
   });
 
   test("fails when the amount is over the limit per transfer", async () => {
@@ -300,7 +320,7 @@ describe("transfer authorizer preflight", () => {
 
     expect(ok).toBe(true);
     for (const part of ["not trusted yet", "Approve transfers to new payees", "IP allowlist"]) {
-      expect(warnings(lines)[0]).toContain(part);
+      expect(warning(lines, "not trusted yet")).toContain(part);
     }
   });
 

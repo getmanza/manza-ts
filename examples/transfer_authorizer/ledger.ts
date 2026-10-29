@@ -7,16 +7,7 @@
 //                  "currency_code": "MAD", "account_id": "...",
 //                  "payee": "ext:..." } }
 
-import {
-  closeSync,
-  existsSync,
-  openSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  writeFileSync,
-  writeSync,
-} from "node:fs";
+import { existsSync, linkSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 
 export interface LedgerEntry {
   payment_id: string;
@@ -64,25 +55,29 @@ export class Ledger {
     return json.trim() === "" ? {} : (JSON.parse(json) as Record<string, LedgerEntry>);
   }
 
-  // Node has no flock: creating the lock file exclusively ("wx") is the
-  // lock, and it holds the writer's pid so a lock left by a process that
-  // died is taken over instead of blocking every later run.
+  // Node has no flock, so the lock is a file naming its holder's pid:
+  // - acquire: write the pid to a private file, then link() it to the lock
+  //   name. link fails when the lock exists, and the lock never exists
+  //   without a pid in it.
+  // - a dead holder's lock is taken over by renaming it aside (atomic: of
+  //   two waiters, one rename wins and the other finds nothing to move). A
+  //   lock that turns out to name someone else is linked back.
   #lock(): () => void {
     const lock = `${this.path}.lock`;
+    const mine = `${lock}.${process.pid}`;
+    writeFileSync(mine, String(process.pid), { mode: 0o600 });
     const deadline = Date.now() + LOCK_TIMEOUT_MS;
-    for (;;) {
-      try {
-        const fd = openSync(lock, "wx", 0o600);
-        writeSync(fd, String(process.pid));
-        closeSync(fd);
-        return () => rmSync(lock, { force: true });
-      } catch (err) {
-        if ((err as { code?: string }).code !== "EEXIST") throw err;
+    try {
+      for (;;) {
+        try {
+          linkSync(mine, lock);
+          return () => rmSync(lock, { force: true });
+        } catch (err) {
+          if ((err as { code?: string }).code !== "EEXIST") throw err;
+        }
         const holder = lockHolder(lock);
-        // Re-read just before removing: another run may have taken the
-        // stale lock over already, and its lock must survive.
-        if (holder !== null && !alive(holder) && lockHolder(lock) === holder) {
-          rmSync(lock, { force: true });
+        if (holder !== null && !alive(holder)) {
+          takeOver(lock, holder);
           continue;
         }
         if (Date.now() >= deadline) {
@@ -90,8 +85,28 @@ export class Ledger {
         }
         Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
       }
+    } finally {
+      rmSync(mine, { force: true });
     }
   }
+}
+
+function takeOver(lock: string, deadHolder: number): void {
+  const aside = `${lock}.stale.${process.pid}`;
+  try {
+    renameSync(lock, aside);
+  } catch {
+    return; // another waiter moved it first
+  }
+  if (lockHolder(aside) !== deadHolder) {
+    // A live holder replaced the stale lock in between: put it back.
+    try {
+      linkSync(aside, lock);
+    } catch {
+      // A third run already took the free name; it holds the lock now.
+    }
+  }
+  rmSync(aside, { force: true });
 }
 
 // The pid in the lock file, or null while it is being written or gone.
