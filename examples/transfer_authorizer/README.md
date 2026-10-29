@@ -97,13 +97,18 @@ import { join } from "node:path";
 import express from "express";
 import { Manza } from "@getmanza/sdk";
 import { createAuthorizer } from "./authorizer.js";
-import { HERE } from "./env.js";
+import { HERE, loadEnv } from "./env.js";
 import { Ledger } from "./ledger.js";
+
+loadEnv(); // .env beside the scripts, as server.ts does
 
 const handle = createAuthorizer({
   client: new Manza({ apiKey: process.env.MANZA_AUTHORIZER_API_KEY }),
   secret: process.env.MANZA_AUTHORIZER_SECRET ?? "",
   ledger: new Ledger(join(HERE, "ledger.json")), // the file create_transfer.ts writes
+  allowNewPayees: !["false", "0", "no"].includes(
+    (process.env.ALLOW_NEW_PAYEES ?? "true").trim().toLowerCase(),
+  ),
 });
 
 const app = express();
