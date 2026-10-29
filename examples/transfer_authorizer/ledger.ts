@@ -78,7 +78,10 @@ export class Ledger {
         return () => rmSync(lock, { force: true });
       } catch (err) {
         if ((err as { code?: string }).code !== "EEXIST") throw err;
-        if (!holderAlive(lock)) {
+        const holder = lockHolder(lock);
+        // Re-read just before removing: another run may have taken the
+        // stale lock over already, and its lock must survive.
+        if (holder !== null && !alive(holder) && lockHolder(lock) === holder) {
           rmSync(lock, { force: true });
           continue;
         }
@@ -91,16 +94,17 @@ export class Ledger {
   }
 }
 
-// false when the lock names a pid that no longer runs. A lock still being
-// written (no pid yet) counts as alive.
-function holderAlive(lock: string): boolean {
-  let pid: number;
+// The pid in the lock file, or null while it is being written or gone.
+function lockHolder(lock: string): number | null {
   try {
-    pid = Number.parseInt(readFileSync(lock, "utf8"), 10);
+    const pid = Number.parseInt(readFileSync(lock, "utf8"), 10);
+    return Number.isInteger(pid) && pid > 0 ? pid : null;
   } catch {
-    return true;
+    return null;
   }
-  if (!Number.isInteger(pid) || pid <= 0) return true;
+}
+
+function alive(pid: number): boolean {
   try {
     process.kill(pid, 0);
     return true;
