@@ -122,7 +122,7 @@ app.post("/", express.raw({ type: "*/*", limit: "1mb" }), async (req, res) => {
     res.status(500).type("text/plain").send("error");
   }
 });
-app.listen(4599);
+app.listen(Number(process.env.PORT || 4599), "127.0.0.1"); // loopback, like server.ts
 ```
 
 ## Troubleshooting
