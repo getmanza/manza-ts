@@ -172,7 +172,7 @@ export class Preflight {
   // 2. Key A reaches the API.
   async #creatorReachesEntity(): Promise<void> {
     try {
-      const entity = (await this.#creatorClient().entity.get()).body as { name?: unknown };
+      const entity = bodyOf<{ name?: unknown }>(await this.#creatorClient().entity.get());
       this.#pass(`key A reaches the API (entity ${JSON.stringify(entity.name)})`);
     } catch (err) {
       if (!(err instanceof ManzaError)) throw err;
@@ -187,7 +187,10 @@ export class Preflight {
   async #enrolledAuthorizer(): Promise<Authorizer | null> {
     let authorizer: Authorizer;
     try {
-      authorizer = (await this.#authorizer().transferAuthorizer.get()).body as Authorizer;
+      // Partial until the status check below.
+      authorizer = bodyOf<Authorizer>(
+        await this.#authorizer().transferAuthorizer.get(),
+      ) as Authorizer;
     } catch (err) {
       if (err instanceof ManzaNotFoundError) {
         this.#fail(
@@ -204,6 +207,13 @@ export class Preflight {
       return null;
     }
 
+    if (typeof authorizer.status !== "string") {
+      this.#fail(
+        "key B read the transfer authorizer, but the API answered without one",
+        "check MANZA_BASE_URL, then rerun",
+      );
+      return null;
+    }
     if (authorizer.status === "active") {
       this.#pass("transfer authorizer is active");
       // The read also answers transfers:read and transfers:write keys.
@@ -227,11 +237,8 @@ export class Preflight {
     const accountId = this.#value("MANZA_ACCOUNT_ID");
     let currency: unknown;
     try {
-      currency = (
-        (await this.#creatorClient().accounts.get(accountId)).body as {
-          currency_code?: unknown;
-        }
-      ).currency_code;
+      const account = await this.#creatorClient().accounts.get(accountId);
+      currency = bodyOf<{ currency_code?: unknown }>(account).currency_code;
     } catch (err) {
       if (!(err instanceof ManzaError)) throw err;
       this.#fail(
@@ -280,8 +287,9 @@ export class Preflight {
   async #endpointEnabled(authorizer: Authorizer): Promise<void> {
     let endpoint: { id?: unknown; url?: unknown; status?: unknown };
     try {
-      endpoint = (await this.#creatorClient().webhookEndpoints.get(authorizer.webhook_endpoint_id))
-        .body as typeof endpoint;
+      endpoint = bodyOf<typeof endpoint>(
+        await this.#creatorClient().webhookEndpoints.get(authorizer.webhook_endpoint_id),
+      );
     } catch (err) {
       if (err instanceof ManzaNotFoundError) {
         this.#fail(
@@ -346,8 +354,9 @@ export class Preflight {
     const beneficiaryId = this.#value("MANZA_BENEFICIARY_ID");
     let beneficiary: { external_accounts?: { id: string; default?: boolean; trusted?: boolean }[] };
     try {
-      beneficiary = (await this.#creatorClient().beneficiaries.get(beneficiaryId))
-        .body as typeof beneficiary;
+      beneficiary = bodyOf<typeof beneficiary>(
+        await this.#creatorClient().beneficiaries.get(beneficiaryId),
+      );
     } catch (err) {
       if (!(err instanceof ManzaError)) throw err;
       this.#fail(
@@ -414,6 +423,13 @@ export class Preflight {
   #warn(message: string, note: string): void {
     this.#out(`! ${message}: ${note}`);
   }
+}
+
+// The response body, or {} when the API answered without one: every field
+// then reads as missing and its check fails instead of throwing.
+function bodyOf<T>(response: { body: unknown }): Partial<T> {
+  const body = response.body;
+  return body !== null && typeof body === "object" ? (body as Partial<T>) : {};
 }
 
 function describe(error: ManzaError): string {

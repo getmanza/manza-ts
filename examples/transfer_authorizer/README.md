@@ -105,9 +105,15 @@ const handle = createAuthorizer({
 });
 
 const app = express();
-app.post("/", express.raw({ type: "*/*" }), async (req, res) => {
-  const { status, body } = await handle(req.body.toString("utf8"), req.headers);
-  res.status(status).type("text/plain").send(body);
+app.post("/", express.raw({ type: "*/*", limit: "1mb" }), async (req, res) => {
+  try {
+    const raw = Buffer.isBuffer(req.body) ? req.body.toString("utf8") : "";
+    const { status, body } = await handle(raw, req.headers);
+    res.status(status).type("text/plain").send(body);
+  } catch (err) {
+    console.error(err);
+    res.status(500).type("text/plain").send("error");
+  }
 });
 app.listen(4599);
 ```

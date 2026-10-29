@@ -171,6 +171,19 @@ describe("transfer authorizer preflight", () => {
     expect(lines.join("\n")).not.toContain("undefined");
   });
 
+  // StubReply without a body answers an empty one, which the client reads as undefined.
+  test("fails, without crashing, when a read answers 200 with no body", async () => {
+    const { ok, lines } = await run({
+      entity: { status: 200 },
+      authorizer: { status: 200 },
+      beneficiary: { status: 200 },
+    });
+
+    expect(ok).toBe(false);
+    expect(failures(lines).some((l) => l.includes("transfer authorizer"))).toBe(true);
+    expect(failures(lines).some((l) => l.includes("default bank account"))).toBe(true);
+  });
+
   test("fails when no authorizer is enrolled", async () => {
     const { lines } = await run({ authorizer: error(404, "not_found_error") });
 
