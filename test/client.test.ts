@@ -49,6 +49,8 @@ describe("Manza", () => {
     expect(z.invoices).toBeDefined();
     expect(z.payeeTrustRequests).toBeDefined();
     expect(z.paymentLinks).toBeDefined();
+    expect(z.payments).toBeDefined();
+    expect(z.transferAuthorizer).toBeDefined();
     expect(z.transferDrafts).toBeDefined();
     expect(z.webhookEndpoints).toBeDefined();
   });

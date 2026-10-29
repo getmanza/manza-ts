@@ -15,7 +15,7 @@ import { x as extractTar } from "tar";
 
 const REPO = "getmanza/manza-ruby";
 // Pinned so a new manza-ruby release cannot break every SDK's CI at once.
-const PINNED_TAG = "v1.0.0";
+const PINNED_TAG = "v1.3.0";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DEST = join(ROOT, "test/fixtures/cassettes");
 
