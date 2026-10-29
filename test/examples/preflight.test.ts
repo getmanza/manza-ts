@@ -111,12 +111,21 @@ describe("transfer authorizer preflight", () => {
     expect(stub.calls).toEqual([]);
   });
 
-  test("fails when the account or beneficiary id is missing", async () => {
+  test("fails when the beneficiary id is missing", async () => {
     env.MANZA_BENEFICIARY_ID = "";
     const { ok, lines } = await run();
 
     expect(ok).toBe(false);
     expect(failures(lines)[0]).toContain("MANZA_BENEFICIARY_ID");
+    expect(stub.calls).toEqual([]);
+  });
+
+  test("fails when the account id is missing", async () => {
+    env.MANZA_ACCOUNT_ID = "";
+    const { ok, lines } = await run();
+
+    expect(ok).toBe(false);
+    expect(failures(lines)[0]).toContain("MANZA_ACCOUNT_ID");
     expect(stub.calls).toEqual([]);
   });
 

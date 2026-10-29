@@ -93,15 +93,17 @@ The authorizer answers the webhook with 200 straight away and does the ledger ch
 `createAuthorizer` returns a framework-free handler: give it the **raw** body (the signature covers the exact bytes, so never let a JSON body parser re-serialize it) and the request headers.
 
 ```ts
+import { join } from "node:path";
 import express from "express";
 import { Manza } from "@getmanza/sdk";
 import { createAuthorizer } from "./authorizer.js";
+import { HERE } from "./env.js";
 import { Ledger } from "./ledger.js";
 
 const handle = createAuthorizer({
   client: new Manza({ apiKey: process.env.MANZA_AUTHORIZER_API_KEY }),
   secret: process.env.MANZA_AUTHORIZER_SECRET ?? "",
-  ledger: new Ledger("ledger.json"),
+  ledger: new Ledger(join(HERE, "ledger.json")), // the file create_transfer.ts writes
 });
 
 const app = express();
