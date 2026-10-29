@@ -184,6 +184,23 @@ describe("transfer authorizer preflight", () => {
     expect(failures(lines).some((l) => l.includes("default bank account"))).toBe(true);
   });
 
+  test("fails, without crashing, when the authorizer lacks its limits and expiry", async () => {
+    for (const key of [
+      "per_transfer_limit",
+      "daily_limit",
+      "daily_authorized_total",
+      "secret_expires_at",
+    ]) {
+      delete authorizer[key];
+    }
+    const { ok, lines } = await run();
+
+    expect(ok).toBe(false);
+    expect(failures(lines).some((l) => l.includes("limits"))).toBe(true);
+    expect(failures(lines).some((l) => l.includes("secret expiry"))).toBe(true);
+    expect(lines.join("\n")).not.toContain("NaN");
+  });
+
   test("fails when no authorizer is enrolled", async () => {
     const { lines } = await run({ authorizer: error(404, "not_found_error") });
 

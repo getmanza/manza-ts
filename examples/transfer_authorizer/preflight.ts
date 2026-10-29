@@ -63,12 +63,6 @@ function parseDecimal(value: unknown): Decimal | null {
   return { units: BigInt(`${match[1]}${fraction}`), scale: fraction.length };
 }
 
-function apiDecimal(value: unknown): Decimal {
-  const parsed = parseDecimal(value);
-  if (!parsed) throw new TypeError(`not a decimal: ${JSON.stringify(value)}`);
-  return parsed;
-}
-
 function align(a: Decimal, b: Decimal): [bigint, bigint, number] {
   const scale = Math.max(a.scale, b.scale);
   return [
@@ -259,6 +253,13 @@ export class Preflight {
 
   #secretFresh(authorizer: Authorizer): void {
     const expiresAt = Date.parse(authorizer.secret_expires_at);
+    if (Number.isNaN(expiresAt)) {
+      this.#fail(
+        `the transfer authorizer did not return a secret expiry (${JSON.stringify(authorizer.secret_expires_at) ?? "missing"})`,
+        "check MANZA_BASE_URL, then rerun",
+      );
+      return;
+    }
     const days = Math.floor((expiresAt - this.#now.getTime()) / 86_400_000);
     if (days >= SECRET_MIN_DAYS) {
       this.#pass(`signing secret expires in ${days} days`);
@@ -329,11 +330,17 @@ export class Preflight {
 
   // 6a. The test amount fits both limits.
   #amountWithinLimits(authorizer: Authorizer, amount: Decimal): void {
-    const perTransfer = apiDecimal(authorizer.per_transfer_limit);
-    const room = minus(
-      apiDecimal(authorizer.daily_limit),
-      apiDecimal(authorizer.daily_authorized_total),
-    );
+    const perTransfer = parseDecimal(authorizer.per_transfer_limit);
+    const daily = parseDecimal(authorizer.daily_limit);
+    const used = parseDecimal(authorizer.daily_authorized_total);
+    if (!perTransfer || !daily || !used) {
+      this.#fail(
+        "the transfer authorizer did not return its limits",
+        "check MANZA_BASE_URL, then rerun",
+      );
+      return;
+    }
+    const room = minus(daily, used);
     if (greaterThan(amount, perTransfer)) {
       this.#fail(
         `${formatAmount(amount)} is over the limit per transfer (${formatAmount(perTransfer)})`,
