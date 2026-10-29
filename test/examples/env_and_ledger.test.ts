@@ -60,7 +60,7 @@ describe("transfer authorizer example files", () => {
     expect(new Ledger(path).find("po_1")).toEqual(ENTRY);
   });
 
-  test("two takeovers of the same dead lock do not both win", () => {
+  test("a dead lock is taken over once, then released for the next writer", () => {
     const path = join(dir, "ledger.json");
     writeFileSync(`${path}.lock`, "2147483646");
     const a = new Ledger(path);
