@@ -101,10 +101,13 @@ import { HERE, loadEnv } from "./env.js";
 import { Ledger } from "./ledger.js";
 
 loadEnv(); // .env beside the scripts, as server.ts does
+const apiKey = process.env.MANZA_AUTHORIZER_API_KEY;
+const secret = process.env.MANZA_AUTHORIZER_SECRET;
+if (!apiKey || !secret) throw new Error("Set MANZA_AUTHORIZER_API_KEY and MANZA_AUTHORIZER_SECRET in .env");
 
 const handle = createAuthorizer({
-  client: new Manza({ apiKey: process.env.MANZA_AUTHORIZER_API_KEY }),
-  secret: process.env.MANZA_AUTHORIZER_SECRET ?? "",
+  client: new Manza({ apiKey }),
+  secret,
   ledger: new Ledger(join(HERE, "ledger.json")), // the file create_transfer.ts writes
   allowNewPayees: !["false", "0", "no"].includes(
     (process.env.ALLOW_NEW_PAYEES ?? "true").trim().toLowerCase(),
