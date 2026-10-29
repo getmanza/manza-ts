@@ -184,21 +184,30 @@ describe("transfer authorizer preflight", () => {
     expect(failures(lines).some((l) => l.includes("default bank account"))).toBe(true);
   });
 
-  test("fails, without crashing, when the authorizer lacks its limits and expiry", async () => {
+  test("fails the authorizer line, and skips what depends on it, when fields are missing", async () => {
     for (const key of [
       "per_transfer_limit",
-      "daily_limit",
-      "daily_authorized_total",
       "secret_expires_at",
+      "webhook_endpoint_id",
+      "currency_code",
     ]) {
       delete authorizer[key];
     }
-    const { ok, lines } = await run();
+    const { ok, lines, output } = await run();
 
     expect(ok).toBe(false);
-    expect(failures(lines).some((l) => l.includes("limits"))).toBe(true);
-    expect(failures(lines).some((l) => l.includes("secret expiry"))).toBe(true);
-    expect(lines.join("\n")).not.toContain("NaN");
+    const line = failures(lines).find((l) => l.includes("transfer authorizer")) ?? "";
+    for (const field of [
+      "per_transfer_limit",
+      "secret_expires_at",
+      "webhook_endpoint_id",
+      "currency_code",
+    ]) {
+      expect(line).toContain(field);
+    }
+    expect(stub.calls.some((c) => c.url.includes("/webhook_endpoints/"))).toBe(false);
+    expect(output).not.toContain("NaN");
+    expect(output).not.toContain("undefined");
   });
 
   test("fails when no authorizer is enrolled", async () => {

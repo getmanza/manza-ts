@@ -36,6 +36,18 @@ const SUSPENSION_FIXES: Readonly<Record<string, string>> = {
     "deleted; if it stays suspended, an approver resumes it in the app",
 };
 
+// The fields the later checks read; a body without any of them fails the
+// authorizer line instead of producing a misleading result downstream.
+const AUTHORIZER_FIELDS = [
+  "status",
+  "currency_code",
+  "per_transfer_limit",
+  "daily_limit",
+  "daily_authorized_total",
+  "secret_expires_at",
+  "webhook_endpoint_id",
+] as const;
+
 interface Authorizer {
   status: string;
   suspension_reason: string | null;
@@ -181,7 +193,7 @@ export class Preflight {
   async #enrolledAuthorizer(): Promise<Authorizer | null> {
     let authorizer: Authorizer;
     try {
-      // Partial until the status check below.
+      // Partial until the field check below.
       authorizer = bodyOf<Authorizer>(
         await this.#authorizer().transferAuthorizer.get(),
       ) as Authorizer;
@@ -201,9 +213,10 @@ export class Preflight {
       return null;
     }
 
-    if (typeof authorizer.status !== "string") {
+    const missing = AUTHORIZER_FIELDS.filter((field) => typeof authorizer[field] !== "string");
+    if (missing.length > 0) {
       this.#fail(
-        "key B read the transfer authorizer, but the API answered without one",
+        `key B read the transfer authorizer, but the API answered without ${missing.join(", ")}`,
         "check MANZA_BASE_URL, then rerun",
       );
       return null;
