@@ -23,7 +23,9 @@ import { Entity } from "./resources/entity.js";
 import { Invoices } from "./resources/invoices.js";
 import { PayeeTrustRequests } from "./resources/payee_trust_requests.js";
 import { PaymentLinks } from "./resources/payment_links.js";
-import { TransferDrafts } from "./resources/transfer_drafts.js";
+import { Payments } from "./resources/payments.js";
+import { TransferAuthorizer } from "./resources/transfer_authorizer.js";
+import type { TransferDrafts } from "./resources/transfer_drafts.js";
 import { WebhookEndpoints } from "./resources/webhook_endpoints.js";
 import { ManzaResponse } from "./response.js";
 import { VERSION } from "./version.js";
@@ -62,6 +64,12 @@ export class Manza {
   readonly invoices: Invoices;
   readonly payeeTrustRequests: PayeeTrustRequests;
   readonly paymentLinks: PaymentLinks;
+  readonly payments: Payments;
+  readonly transferAuthorizer: TransferAuthorizer;
+  /**
+   * @deprecated Use {@link Manza.payments}. Kept for all of 1.x: it is the
+   * same resource, which calls `/api/payments`.
+   */
   readonly transferDrafts: TransferDrafts;
   readonly webhookEndpoints: WebhookEndpoints;
 
@@ -84,7 +92,9 @@ export class Manza {
     this.invoices = new Invoices(this);
     this.payeeTrustRequests = new PayeeTrustRequests(this);
     this.paymentLinks = new PaymentLinks(this);
-    this.transferDrafts = new TransferDrafts(this);
+    this.payments = new Payments(this);
+    this.transferAuthorizer = new TransferAuthorizer(this);
+    this.transferDrafts = this.payments;
     this.webhookEndpoints = new WebhookEndpoints(this);
   }
 

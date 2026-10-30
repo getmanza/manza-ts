@@ -20,7 +20,8 @@ Project instructions for every agent: Claude Code (`CLAUDE.md` imports this file
 
 Mirrors `manza-ruby` one-to-one:
 
-- `Manza` client, ten resources: `accounts`, `beneficiaries`, `checkoutSessions`, `customers`, `entity`, `invoices`, `payeeTrustRequests`, `paymentLinks`, `transferDrafts`, `webhookEndpoints`
+- `Manza` client, eleven resources: `accounts`, `beneficiaries`, `checkoutSessions`, `customers`, `entity`, `invoices`, `payeeTrustRequests`, `paymentLinks`, `payments` (`transferDrafts` is its deprecated alias), `transferAuthorizer`, `webhookEndpoints`
+- `Webhook` (`verify`, `constructEvent`, `sign`) and `TransferAuthorization`: pure functions, async on Web Crypto
 - Cursor-based `Page<T>` with async iterator (`page.records()`)
 - 10-class `ManzaError` hierarchy — discriminate via `instanceof`, never status-code matching
 - Wire-format response bodies are returned as-is (snake_case keys). **No auto-camelCasing.**

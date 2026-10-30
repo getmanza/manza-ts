@@ -66,28 +66,76 @@ manza.beneficiaries.list();
 manza.beneficiaries.get(id);
 manza.beneficiaries.create({ beneficiary_type: "individual", person_name: "Jane Doe" });
 manza.beneficiaries.listExternalAccounts(beneficiaryId);
-manza.beneficiaries.getExternalAccount(beneficiaryId, id);
+manza.beneficiaries.getExternalAccount(beneficiaryId, id); // "trusted": true once a trusted payee
 manza.beneficiaries.createExternalAccount(beneficiaryId, { account_number });
-
-manza.transferDrafts.create({ account_id, beneficiary_id, amount: "150.00", client_reference });
-manza.transferDrafts.get(id);
-manza.transferDrafts.authorize(id, { authorization_id, signature });
-manza.transferDrafts.decline(id, { authorization_id, reason });
 
 manza.payeeTrustRequests.create({ external_account_ids: [id] });
 manza.payeeTrustRequests.get(id);
+
+manza.payments.create({ account_id, beneficiary_id, amount: "2500.00", client_reference });
+// client_reference is unique per entity; a duplicate raises ManzaConflictError
+manza.payments.get(id); // authorization: status, refusal_reason
+manza.payments.authorize(id, { authorization_id, signature });
+manza.payments.decline(id, { authorization_id, reason });
+// manza.transferDrafts is a deprecated alias of manza.payments (same object, /api/payments)
+
+manza.transferAuthorizer.get(); // status, suspension_reason, limits, daily_authorized_total; ManzaNotFoundError: none enrolled
 ```
 
-## Transfer authorization
+## Machine-authorized transfers
 
-The `payment.authorization_requested` webhook delivers an `authorization_id` and a one-time `nonce`. Build the signature input from your own record of the draft (not the webhook's `signature_input`, which is there only to compare against), sign it with the authorizer endpoint's signing secret, and pass the result to `transferDrafts.authorize`.
+A draft inside your entity's authorization envelope (trusted payee, or a new one when you allow it, within limits) is sent to your enrolled authorizer endpoint as a `payment.authorization_requested` webhook carrying an `authorization.id` and a one-time `nonce`. Your system checks it against its own ledger, signs it and authorizes it with a **different API key** from the one that created it. [`examples/transfer_authorizer/`](examples/transfer_authorizer/) runs the whole flow. The [transfer authorization docs](https://ma.manza.finance/docs/api/transfer-authorization) have the full reference.
+
+### Setup, step by step
+
+1. **Feature flags.** Ask support to enable API transfers and transfer authorization (`release_api_webhook_authorization`) on your workspace.
+2. **Two API keys.** Key A creates drafts (`transfers:write`; `beneficiaries:request_trust` for step 6; `entity:read`, `accounts:read`, `webhook_endpoints:read` and `beneficiaries:read` for the preflight in step 7). Key B answers the challenges (`transfers:authorize`). The creating key is always refused with 403 `same_key_forbidden`, so keep key B and the signing secret on the system that holds your ledger. Bind key B to an IP allowlist: authorizing from a key without one is refused with 403 `unrestricted_api_key`. Bind key A to one too if you allow new payees (step 6): a draft to a new payee from a key without an allowlist goes to your approvers (`unrestricted_api_key`).
+3. **A stable public URL.** Your authorizer needs an HTTPS URL that never changes: an enrolled endpoint's URL is locked. Use a reserved ngrok domain (`ngrok http --url=your-name.ngrok.app 4599`) or a named Cloudflare tunnel (`cloudflared tunnel create`, then `cloudflared tunnel route dns`). Never a free ngrok URL: it changes on every restart.
+4. **Create the webhook endpoint** at that URL:
+
+   ```ts
+   await manza.webhookEndpoints.create({ url: "https://your-name.ngrok.app/", events: ["transfer.executed"] });
+   ```
+
+5. **Enrol it in the app**: Settings → Developer → Transfer approval. Pick the endpoint, the currency and both limits, confirm with your two-factor code, and copy the signing secret: it is shown once. Enrolment is what routes the challenges: `payment.authorization_requested` goes only to the enrolled endpoint and cannot be subscribed to through `events`.
+6. **Allow new payees, or trust each payee.** Turn on *Approve transfers to new payees* at enrolment (or later, same page, with your two-factor code) and set the *Limit per transfer to a new payee*. Your authorizer may then approve a transfer to bank details your workspace never trusted, up to that limit, and its signature trusts them: the webhook's `payment.payee_trusted` is `false` for such a transfer. Bank details whose trust was revoked, or that were edited after trusting, still go to your approvers. Without the option, an approver marks the beneficiary's bank account as trusted from the Beneficiaries list, or you ask them to:
+
+   ```ts
+   await manza.payeeTrustRequests.create({ external_account_ids: ["01a1..."] });
+   ```
+
+   `trusted` on `manza.beneficiaries.getExternalAccount` says which it is. The API does not show whether the option is on.
+7. **Run the preflight, then the example** (from `examples/transfer_authorizer/`, after `bun install` at the repository root and filling in `.env`): `bun preflight.ts` checks what the API shows of steps 1–6 and prints a fix for each that fails. What it cannot see, check by hand: that key B is bound to an IP allowlist, and, for a payee not trusted yet, that *Approve transfers to new payees* is on and key A is bound to an IP allowlist too (it warns, it does not fail). Then `bun server.ts` in one terminal, `bun create_transfer.ts` in another (on Node, `npx tsx` in place of `bun`).
+8. **Troubleshooting**: a draft that goes to your approvers instead has an `authorization` with a `refusal_reason`: status `refused` when it did not qualify (`create_transfer.ts` prints the reason in words), or `expired` (`expired`), `superseded` (`stale`; or an approver finalized the draft while its challenge was open, and it executes) or `failed` (`signature_failed`, five invalid signatures) when a challenge was sent and closed without an authorize; `manza.transferAuthorizer.get()` shows a suspension and its `suspension_reason`. An authorize answered 409 `authorization_busy` (a bank-detail edit, trust or trust revocation on the same payee was in flight) is safe to retry. The reasons, and an API error's `type`, are in the [transfer authorization docs](https://ma.manza.finance/docs/api/transfer-authorization).
+
+### Verifying the webhook
+
+Pass the **raw request body**, never re-serialized JSON. `Webhook.constructEvent` reads `X-Manza-Signature` and `X-Manza-Timestamp` (any case, from a Fetch `Headers` or a plain object such as Node's `req.headers`, or the legacy `X-Zazu-*` names), checks the signature in constant time and the timestamp within 5 minutes, and resolves to the parsed event. It rejects with `ManzaArgumentError` otherwise:
+
+```ts
+import { ManzaArgumentError, Webhook } from "@getmanza/sdk";
+
+let event: Record<string, unknown>;
+try {
+  event = await Webhook.constructEvent({ payload: rawBody, headers: req.headers, secret: signingSecret });
+} catch (err) {
+  if (err instanceof ManzaArgumentError) return reply(401, err.message);
+  throw err;
+}
+```
+
+`Webhook.verify({ payload, signature, timestamp, secret })` resolves to a boolean instead. Both accept `tolerance: null` to skip the timestamp check. Use it only to replay a captured delivery in a local tool or test, never on a live endpoint: without the check, anyone holding a captured delivery can replay it. `Webhook.sign({ payload, timestamp, secret })` signs a delivery for your tests. All three are async: they use the Web Crypto API, so they run on Node, Bun, Deno, browsers and Workers.
+
+### Signing the challenge
+
+Sign the draft from **your own record** of it (not the webhook's `signature_input`, which is there only to compare against) with the endpoint's signing secret:
 
 ```ts
 import { Manza, TransferAuthorization } from "@getmanza/sdk";
 
 const input = TransferAuthorization.signatureInput({
   payment_id: draft.id,
-  nonce,
+  nonce: webhook.data.authorization.nonce,
   amount: draft.amount, // The API's decimal string verbatim ("2500.0"), not a number.
   currency_code: draft.currency_code,
   account_id: draft.account_id,
@@ -100,15 +148,14 @@ const signature = await TransferAuthorization.sign({
   signature_input: input,
 });
 
-await manza.transferDrafts.authorize(draft.id, {
-  authorization_id: authorizationId,
+const authorizer = new Manza({ apiKey: process.env.MANZA_AUTHORIZER_API_KEY });
+await authorizer.payments.authorize(draft.id, {
+  authorization_id: webhook.data.authorization.id,
   signature,
 });
 ```
 
-`TransferAuthorization.sign` is async — it uses the Web Crypto API so it works on Node, Bun, Deno, browsers, and Workers without a `node:crypto` import.
-
-Use a key other than the one that created the draft — otherwise 403 `same_key_forbidden`. A blank signature raises `ManzaArgumentError` locally; the server counts a missing one as a failed attempt, and five fail the challenge.
+`TransferAuthorization.sign` is async for the same Web Crypto reason. A blank signature raises `ManzaArgumentError` locally and is never sent. A wrong one raises `ManzaValidationError` (`type` `invalid_signature`). Five on one challenge send the draft to your in-app approvers; five in a row suspend the authorizer.
 
 ## Errors
 

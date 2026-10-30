@@ -21,6 +21,6 @@
     "allowSyntheticDefaultImports": true,
     "types": ["bun-types"]
   },
-  "include": ["src/**/*", "test/**/*", "scripts/**/*"],
+  "include": ["src/**/*", "test/**/*", "scripts/**/*", "examples/**/*"],
   "exclude": ["node_modules", "dist"]
 }

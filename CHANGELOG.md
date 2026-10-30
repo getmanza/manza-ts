@@ -7,6 +7,61 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+Mirrors manza-ruby 1.3.0 (with 1.2.0) and replays `cassettes-v1.3.0`.
+
+### Added
+
+- `Webhook` verifies incoming webhook deliveries: `Webhook.verify` (resolves
+  to a boolean), `Webhook.constructEvent` (resolves to the parsed event,
+  rejects with `ManzaArgumentError`) and `Webhook.sign`. Reads
+  `X-Manza-Signature` / `X-Manza-Timestamp` in any case from a Fetch
+  `Headers` or a plain object (Node's `req.headers`), with the legacy
+  `X-Zazu-*` names as a fallback; compares in constant time and checks the
+  timestamp within 5 minutes (`tolerance: null` skips it, for local replay
+  only). Async, on Web Crypto. Passes the shared fixed vector every SDK
+  reuses. No new error class.
+- `manza.payments` (`Payments`): `create`, `get`, `authorize` and
+  `decline` on the API's canonical paths, `POST /api/payments`,
+  `GET /api/payments/:id`, `POST /api/payments/:id/authorize` and
+  `POST /api/payments/:id/decline`. The API renamed transfer drafts to
+  payments; request and response bodies are unchanged, and so is the
+  `TransferAuthorization` signature input.
+- `manza.transferAuthorizer.get()` (`GET /api/transfer_authorizer`): the
+  enrolled authorizer's `status`, `suspension_reason`, limits,
+  `daily_authorized_total`, `secret_expires_at` and `webhook_endpoint_id`.
+  Rejects with `ManzaNotFoundError` when none is enrolled.
+- Documented the new pass-through fields: a draft's `authorization` carries
+  `refusal_reason` (status `refused` when it went to the approvers at
+  create time), bank accounts carry `trusted`, and the challenge webhook's
+  `payment.payee_trusted` says whether the payee was trusted already.
+- `examples/transfer_authorizer/`: a runnable two-key transfer authorizer
+  on `node:http` (Bun, or Node through `tsx`): `server.ts` verifies the
+  webhook, checks a JSON ledger, signs and authorizes (or declines, also
+  for a new payee with `ALLOW_NEW_PAYEES=false`) and retries 409
+  `authorization_busy`; `create_transfer.ts` prints where the draft was
+  routed and why; `preflight.ts` checks what the API shows of each setup
+  step, prints the fix for each that fails and warns about what it cannot
+  see (key B's scope and IP allowlist, the new-payee option). Not shipped
+  in the npm package.
+- README: "Machine-authorized transfers" with "Setup, step by step", the
+  webhook verifier and the signing snippet.
+
+### Deprecated
+
+- `manza.transferDrafts` and `TransferDrafts`. Both keep working for all of
+  1.x: the accessor is `manza.payments` itself and the export names the
+  same class, so the old name now calls `/api/payments` too. The server
+  keeps `/api/transfer_drafts` as a permanent alias.
+
+### Changed (cassettes)
+
+- The replay tests pin `cassettes-v1.3.0` (was `v1.0.0`). The payment
+  cassettes moved from `transfer_drafts/` to `payments/`; the
+  `payments/create` and `beneficiaries/create` request bodies changed
+  (see manza-ruby's CHANGELOG at 1.2.0 and 1.3.0).
+
+## [1.0.0]
+
 Renamed from Zazu to Manza; the first release under the new name is 1.0.0.
 
 ### Changed (breaking)
