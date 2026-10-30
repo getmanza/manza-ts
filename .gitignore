@@ -9,3 +9,4 @@ coverage/
 .idea/
 test/fixtures/cassettes/
 cassettes.tar.gz
+.claude/worktrees/
