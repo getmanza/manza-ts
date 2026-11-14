@@ -195,11 +195,14 @@ export function createAuthorizer(options: AuthorizerOptions): AuthorizerHandler 
     }
   }
 
-  // A missing field reads as null: an entry the 1.x example wrote has no
-  // transfer_method, and still matches a draft whose transfer_method is null.
+  // A webhook without transfer_method reads as null, like the ledger's.
   function mismatchReason(entry: LedgerEntry, payment: Payment): string | null {
     const field = CHECKED_FIELDS.find(([ledgerField, webhookField]) => {
-      return (entry[ledgerField] ?? null) !== (payment[webhookField] ?? null);
+      const sent =
+        webhookField === "transfer_method"
+          ? (payment[webhookField] ?? null)
+          : payment[webhookField];
+      return entry[ledgerField] !== sent;
     });
     if (!field) return null;
 
@@ -224,7 +227,7 @@ export function createAuthorizer(options: AuthorizerOptions): AuthorizerHandler 
       account_id: entry.account_id,
       payee: entry.payee,
       client_reference: clientReference,
-      transfer_method: entry.transfer_method ?? null,
+      transfer_method: entry.transfer_method,
     });
     // A signature over a different input is sure to fail, and failed
     // attempts count toward suspending the authorizer. Leave the challenge

@@ -29,8 +29,8 @@ release: see Migrating from 1.x below.
   `transfer_method` (`string | null`), appended after `client_reference`
   (`""` when `null`):
   `manza.transfer-authorization.v2|payment_id|nonce|amount|currency_code|account_id|payee|client_reference|transfer_method`.
-  Leaving it out fails to compile, and rejects with `ManzaArgumentError`
-  from plain JavaScript, before anything is sent. The API verifies v2 for
+  Leaving it out fails to compile, and throws `ManzaArgumentError` from
+  plain JavaScript, before anything is sent. The API verifies v2 for
   every request that is unpinned or sends `Manza-Version: 2026-11-13`;
   only `2026-03-27` still verifies v1. Pass the payment's
   `transfer_method` as the API returned it.

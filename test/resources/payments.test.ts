@@ -117,14 +117,31 @@ describe("Payments (cassette replay)", () => {
     expect(body.authorization.refusal_reason).toBe("over_transfer_limit");
   });
 
+  // The recorded signature is an HMAC over the real nonce and secret
+  // (scrubbed to <SIGNATURE>), which replay cannot reproduce; the matcher
+  // drops it. This signs the v2 input the way a client does.
   test("#authorize executes the draft", async () => {
-    const response = await manza.payments.authorize(
-      FIXTURE_IDS.MANZA_FIXTURE_AUTHORIZABLE_DRAFT_ID,
-      {
-        authorization_id: FIXTURE_IDS.MANZA_FIXTURE_AUTHORIZABLE_AUTHORIZATION_ID,
-        signature: "any-non-blank-signature",
-      },
-    );
+    const draftId = FIXTURE_IDS.MANZA_FIXTURE_AUTHORIZABLE_DRAFT_ID;
+    const input = TransferAuthorization.signatureInput({
+      payment_id: draftId,
+      nonce: FIXTURE_IDS.MANZA_FIXTURE_AUTHORIZABLE_NONCE,
+      amount: "10.0",
+      currency_code: "MAD",
+      account_id: FIXTURE_IDS.MANZA_FIXTURE_ACCOUNT_ID,
+      payee: TransferAuthorization.payeeFor({
+        external_account_id: FIXTURE_IDS.MANZA_FIXTURE_TRUSTED_EXTERNAL_ACCOUNT_ID,
+      }),
+      client_reference: FIXTURE_IDS.MANZA_FIXTURE_AUTHORIZABLE_CLIENT_REFERENCE,
+      transfer_method: "standard",
+    });
+
+    const response = await manza.payments.authorize(draftId, {
+      authorization_id: FIXTURE_IDS.MANZA_FIXTURE_AUTHORIZABLE_AUTHORIZATION_ID,
+      signature: await TransferAuthorization.sign({
+        secret: "whsec_replay",
+        signature_input: input,
+      }),
+    });
 
     expect(response.status).toBe(200);
     const body = response.body as {

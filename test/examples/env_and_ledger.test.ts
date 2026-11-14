@@ -52,6 +52,16 @@ describe("transfer authorizer example files", () => {
     expect(ledger.find("po_2")).toBeNull();
   });
 
+  // The 1.x example wrote no transfer_method: it reads as null, the type's
+  // "no rail choice", never undefined.
+  test("the ledger reads a 1.x entry's missing transfer_method as null", () => {
+    const path = join(dir, "ledger.json");
+    const { transfer_method: _dropped, ...v1Entry } = ENTRY;
+    writeFileSync(path, JSON.stringify({ po_1: v1Entry }));
+
+    expect(new Ledger(path).find("po_1")).toEqual({ ...v1Entry, transfer_method: null });
+  });
+
   test("the ledger finds only entries it recorded, whatever the key", () => {
     const ledger = new Ledger(join(dir, "ledger.json"));
     ledger.record("__proto__", ENTRY);
