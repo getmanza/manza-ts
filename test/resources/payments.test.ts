@@ -23,6 +23,7 @@ describe("Payments (cassette replay)", () => {
     server = await startServer([
       "payments/create",
       "payments/create_duplicate",
+      "payments/create_invalid_transfer_method",
       "payments/get",
       "payments/get_refused",
       "payments/authorize",
@@ -35,7 +36,7 @@ describe("Payments (cassette replay)", () => {
 
   afterAll(() => server?.close());
 
-  test("#create creates a draft carrying the client_reference", async () => {
+  test("#create creates a draft carrying the client_reference and the transfer_method", async () => {
     const response = await manza.payments.create({
       account_id: FIXTURE_IDS.MANZA_FIXTURE_ACCOUNT_ID,
       beneficiary_id: FIXTURE_IDS.MANZA_FIXTURE_BENEFICIARY_ID,
@@ -43,6 +44,7 @@ describe("Payments (cassette replay)", () => {
       payment_reference: "SDK fixture",
       internal_notes: "[zazu-ruby-fixture] create spec - do not approve",
       client_reference: FIXTURE_IDS.MANZA_FIXTURE_CLIENT_REFERENCE,
+      transfer_method: "standard",
     });
 
     expect(response.status).toBe(201);
@@ -50,10 +52,12 @@ describe("Payments (cassette replay)", () => {
       status: string;
       transfer: unknown;
       client_reference: string;
+      transfer_method: string;
       authorization: { status: string };
     };
     expect(body.status).toBe("requested");
     expect(body.client_reference).toBe(FIXTURE_IDS.MANZA_FIXTURE_CLIENT_REFERENCE);
+    expect(body.transfer_method).toBe("standard");
     // Inside the envelope: the challenge went to the authorizer.
     expect(body.authorization.status).toBe("pending");
     expect(body.transfer).toBeNull();
@@ -77,6 +81,23 @@ describe("Payments (cassette replay)", () => {
     }
   });
 
+  test("#create rejects a transfer_method the market does not offer on transfer_method", async () => {
+    try {
+      await manza.payments.create({
+        account_id: FIXTURE_IDS.MANZA_FIXTURE_ACCOUNT_ID,
+        beneficiary_id: FIXTURE_IDS.MANZA_FIXTURE_BENEFICIARY_ID,
+        amount: "10.00",
+        transfer_method: "carrier_pigeon",
+      });
+      throw new Error("expected ManzaValidationError");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ManzaValidationError);
+      const e = err as ManzaValidationError;
+      expect(e.status).toBe(422);
+      expect(e.param).toBe("transfer_method");
+    }
+  });
+
   test("#get returns a single payment", async () => {
     const response = await manza.payments.get(FIXTURE_IDS.MANZA_FIXTURE_TRANSFER_DRAFT_ID);
     const body = response.body as Record<string, unknown>;
@@ -96,14 +117,31 @@ describe("Payments (cassette replay)", () => {
     expect(body.authorization.refusal_reason).toBe("over_transfer_limit");
   });
 
+  // The recorded signature is an HMAC over the real nonce and secret
+  // (scrubbed to <SIGNATURE>), which replay cannot reproduce; the matcher
+  // drops it. This signs the v2 input the way a client does.
   test("#authorize executes the draft", async () => {
-    const response = await manza.payments.authorize(
-      FIXTURE_IDS.MANZA_FIXTURE_AUTHORIZABLE_DRAFT_ID,
-      {
-        authorization_id: FIXTURE_IDS.MANZA_FIXTURE_AUTHORIZABLE_AUTHORIZATION_ID,
-        signature: "any-non-blank-signature",
-      },
-    );
+    const draftId = FIXTURE_IDS.MANZA_FIXTURE_AUTHORIZABLE_DRAFT_ID;
+    const input = TransferAuthorization.signatureInput({
+      payment_id: draftId,
+      nonce: FIXTURE_IDS.MANZA_FIXTURE_AUTHORIZABLE_NONCE,
+      amount: "10.0",
+      currency_code: "MAD",
+      account_id: FIXTURE_IDS.MANZA_FIXTURE_ACCOUNT_ID,
+      payee: TransferAuthorization.payeeFor({
+        external_account_id: FIXTURE_IDS.MANZA_FIXTURE_TRUSTED_EXTERNAL_ACCOUNT_ID,
+      }),
+      client_reference: FIXTURE_IDS.MANZA_FIXTURE_AUTHORIZABLE_CLIENT_REFERENCE,
+      transfer_method: "standard",
+    });
+
+    const response = await manza.payments.authorize(draftId, {
+      authorization_id: FIXTURE_IDS.MANZA_FIXTURE_AUTHORIZABLE_AUTHORIZATION_ID,
+      signature: await TransferAuthorization.sign({
+        secret: "whsec_replay",
+        signature_input: input,
+      }),
+    });
 
     expect(response.status).toBe(200);
     const body = response.body as {
@@ -120,6 +158,8 @@ describe("Payments (cassette replay)", () => {
 
   // The fresh bank account was never trusted; with "Approve transfers to
   // new payees" on, the authorizer approves it and the signature trusts it.
+  // The seeded drafts send `transfer_method: "standard"` (MA's base rail,
+  // always offered), so the v2 input signs that rail.
   test("#authorize executes a transfer to a new payee", async () => {
     const draftId = FIXTURE_IDS.MANZA_FIXTURE_NEW_PAYEE_DRAFT_ID;
     const input = TransferAuthorization.signatureInput({
@@ -132,6 +172,7 @@ describe("Payments (cassette replay)", () => {
         external_account_id: FIXTURE_IDS.MANZA_FIXTURE_EXTERNAL_ACCOUNT_ID,
       }),
       client_reference: FIXTURE_IDS.MANZA_FIXTURE_NEW_PAYEE_CLIENT_REFERENCE,
+      transfer_method: "standard",
     });
 
     const response = await manza.payments.authorize(draftId, {

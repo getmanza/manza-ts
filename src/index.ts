@@ -11,6 +11,7 @@ export {
   type ManzaErrorOptions,
   ManzaForbiddenError,
   ManzaNotFoundError,
+  ManzaPlanLimitReachedError,
   ManzaRateLimitError,
   ManzaServerError,
   ManzaValidationError,

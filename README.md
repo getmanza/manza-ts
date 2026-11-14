@@ -44,7 +44,15 @@ manza.customers.update(id, { ... });
 manza.customers.delete(id);
 
 manza.invoices.list();
-manza.invoices.create({ ... });
+manza.invoices.create({
+  customer_id,
+  account_id, // required: the account the invoice is paid into
+  issue_date: "2026-11-14",
+  due_date: "2026-12-14",
+  generate_payment_link: true, // a card payment link, made when approved (payment_links:write; payment links enabled for the entity)
+  items: [{ description: "Consulting", quantity: 10, unit_price: "150.00" }],
+});
+manza.invoices.update(id, { account_id, generate_payment_link: false });
 // state-transition methods exist but the underlying public API is
 // not yet wired up — see getmanza/app issue #2174.
 
@@ -72,14 +80,16 @@ manza.beneficiaries.createExternalAccount(beneficiaryId, { account_number });
 manza.payeeTrustRequests.create({ external_account_ids: [id] });
 manza.payeeTrustRequests.get(id);
 
-manza.payments.create({ account_id, beneficiary_id, amount: "2500.00", client_reference });
+manza.payments.create({ account_id, beneficiary_id, amount: "2500.00", client_reference, transfer_method: "standard" });
 // client_reference is unique per entity; a duplicate raises ManzaConflictError
+// transfer_method is the optional rail: eft/rtc (ZA), standard/instant (MA); omitted → the default
 manza.payments.get(id); // authorization: status, refusal_reason
 manza.payments.authorize(id, { authorization_id, signature });
 manza.payments.decline(id, { authorization_id, reason });
 // manza.transferDrafts is a deprecated alias of manza.payments (same object, /api/payments)
 
-manza.transferAuthorizer.get(); // status, suspension_reason, limits, daily_authorized_total; ManzaNotFoundError: none enrolled
+manza.transferAuthorizer.get(); // status, suspension_reason, limits, daily_authorized_total, trust_new_payees,
+                                // new_payee_limit; ManzaNotFoundError: none enrolled
 ```
 
 ## Machine-authorized transfers
@@ -104,9 +114,9 @@ A draft inside your entity's authorization envelope (trusted payee, or a new one
    await manza.payeeTrustRequests.create({ external_account_ids: ["01a1..."] });
    ```
 
-   `trusted` on `manza.beneficiaries.getExternalAccount` says which it is. The API does not show whether the option is on.
+   `trusted` on `manza.beneficiaries.getExternalAccount` says which it is. `trust_new_payees` on `manza.transferAuthorizer.get()` says whether the option is on, and `new_payee_limit` its limit.
 7. **Run the preflight, then the example** (from `examples/transfer_authorizer/`, after `bun install` at the repository root and filling in `.env`): `bun preflight.ts` checks what the API shows of steps 1–6 and prints a fix for each that fails. What it cannot see, check by hand: that key B is bound to an IP allowlist, and, for a payee not trusted yet, that *Approve transfers to new payees* is on and key A is bound to an IP allowlist too (it warns, it does not fail). Then `bun server.ts` in one terminal, `bun create_transfer.ts` in another (on Node, `npx tsx` in place of `bun`).
-8. **Troubleshooting**: a draft that goes to your approvers instead has an `authorization` with a `refusal_reason`: status `refused` when it did not qualify (`create_transfer.ts` prints the reason in words), or `expired` (`expired`), `superseded` (`stale`; or an approver finalized the draft while its challenge was open, and it executes) or `failed` (`signature_failed`, five invalid signatures) when a challenge was sent and closed without an authorize; `manza.transferAuthorizer.get()` shows a suspension and its `suspension_reason`. An authorize answered 409 `authorization_busy` (a bank-detail edit, trust or trust revocation on the same payee was in flight) is safe to retry. The reasons, and an API error's `type`, are in the [transfer authorization docs](https://ma.manza.finance/docs/api/transfer-authorization).
+8. **Troubleshooting**: a draft that goes to your approvers instead has an `authorization` with a `refusal_reason`: status `refused` when it did not qualify (`create_transfer.ts` prints the reason in words), or `expired` (`expired`), `superseded` (`stale`; or an approver finalized the draft while its challenge was open, and it executes) or `failed` (`signature_failed`, five invalid signatures) when a challenge was sent and closed without an authorize, and `superseded` (`rail_limit_exceeded`) when an authorized transfer was over its rail's limit at execution, so nothing moved; `manza.transferAuthorizer.get()` shows a suspension and its `suspension_reason`. An authorize answered 409 `authorization_busy` (a bank-detail edit, trust or trust revocation on the same payee was in flight) is safe to retry. The reasons, and an API error's `type`, are in the [transfer authorization docs](https://ma.manza.finance/docs/api/transfer-authorization).
 
 ### Verifying the webhook
 
@@ -128,7 +138,7 @@ try {
 
 ### Signing the challenge
 
-Sign the draft from **your own record** of it (not the webhook's `signature_input`, which is there only to compare against) with the endpoint's signing secret:
+Sign the draft from **your own record** of it with the endpoint's signing secret. The SDK builds the v2 input (`manza.transfer-authorization.v2`), which ends with the payment's `transfer_method` (an empty segment when it is `null`); compare it with the webhook's `signature_input_v2`, which is there only to compare against. The webhook's `signature_input` is the v1 string, verified only for clients pinned to `Manza-Version: 2026-03-27`: those stay on `@getmanza/sdk` 1.x. Unpinned, or pinned to `2026-11-13` or later, the API verifies v2.
 
 ```ts
 import { Manza, TransferAuthorization } from "@getmanza/sdk";
@@ -141,6 +151,7 @@ const input = TransferAuthorization.signatureInput({
   account_id: draft.account_id,
   payee: TransferAuthorization.payeeFor({ external_account_id: draft.external_account_id }),
   client_reference: draft.client_reference,
+  transfer_method: draft.transfer_method, // required; null signs as ""
 });
 
 const signature = await TransferAuthorization.sign({
@@ -159,7 +170,7 @@ await authorizer.payments.authorize(draft.id, {
 
 ## Errors
 
-Ten concrete subclasses; discriminate with `instanceof`.
+Eleven concrete subclasses; discriminate with `instanceof`. A 422 is a `ManzaValidationError`; one whose `type` is `plan_limit_reached` is its subclass `ManzaPlanLimitReachedError`, carrying `kind`, `current` and `max` (a plan cap: retrying does not help).
 
 ```ts
 import { ManzaValidationError, ManzaRateLimitError, ManzaNotFoundError } from "@getmanza/sdk";

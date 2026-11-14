@@ -34,5 +34,8 @@ describe("TransferAuthorizer (cassette replay)", () => {
     ]) {
       expect(body).toHaveProperty(key);
     }
+    // "Approve transfers to new payees" is on for the fixture entity.
+    expect(body.trust_new_payees).toBe(true);
+    expect(typeof body.new_payee_limit).toBe("string");
   });
 });

@@ -5,7 +5,7 @@
 //
 //   { "po_8812": { "payment_id": "...", "amount": "2500.0",
 //                  "currency_code": "MAD", "account_id": "...",
-//                  "payee": "ext:..." } }
+//                  "payee": "ext:...", "transfer_method": "standard" } }
 
 import { existsSync, linkSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 
@@ -15,6 +15,9 @@ export interface LedgerEntry {
   currency_code: string;
   account_id: string;
   payee: string;
+  // The create response's (null where the market offers no choice): the
+  // v2 signature signs it.
+  transfer_method: string | null;
 }
 
 const LOCK_TIMEOUT_MS = 5_000;
@@ -60,7 +63,10 @@ export class Ledger {
     const json = readFileSync(this.path, "utf8");
     if (json.trim() === "") return entries;
     for (const [key, entry] of Object.entries(JSON.parse(json) as Record<string, LedgerEntry>)) {
-      entries[key] = entry;
+      // An entry the 1.x example wrote has no transfer_method: it reads as
+      // null, so it still matches a draft in a market with no rail choice.
+      // A null entry stays null: not in the ledger.
+      entries[key] = entry && { ...entry, transfer_method: entry.transfer_method ?? null };
     }
     return entries;
   }

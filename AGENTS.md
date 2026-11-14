@@ -23,7 +23,7 @@ Mirrors `manza-ruby` one-to-one:
 - `Manza` client, eleven resources: `accounts`, `beneficiaries`, `checkoutSessions`, `customers`, `entity`, `invoices`, `payeeTrustRequests`, `paymentLinks`, `payments` (`transferDrafts` is its deprecated alias), `transferAuthorizer`, `webhookEndpoints`
 - `Webhook` (`verify`, `constructEvent`, `sign`) and `TransferAuthorization`: pure functions, async on Web Crypto
 - Cursor-based `Page<T>` with async iterator (`page.records()`)
-- 10-class `ManzaError` hierarchy — discriminate via `instanceof`, never status-code matching
+- 11-class `ManzaError` hierarchy (`ManzaPlanLimitReachedError` extends `ManzaValidationError` since 2.0) — discriminate via `instanceof`, never status-code matching
 - Wire-format response bodies are returned as-is (snake_case keys). **No auto-camelCasing.**
 
 ## How to work in this codebase
@@ -40,7 +40,7 @@ Mirrors `manza-ruby` one-to-one:
 - **No long-lived `NPM_TOKEN`.** Releases publish via npm OIDC trusted publishing through the `release` GitHub environment. Verify the binding on https://www.npmjs.com/package/@getmanza/sdk/access if it ever drifts.
 - **Cassettes come from manza-ruby.** `bun run fetch:cassettes` downloads the tarball. The Ruby SDK records, every other SDK replays.
 - **Snake-case wire format.** API request/response bodies use snake_case. Don't transform them.
-- **No new error classes without updating manza-ruby.** The 10-class hierarchy is shared across SDKs. Adding to it means coordinating both repos.
+- **No new error classes without updating manza-ruby.** The 11-class hierarchy is shared across SDKs. Adding to it means coordinating both repos.
 - **A replay mismatch is fixed, never silenced.** Fix the harness matcher (`test/cassette-replay.ts`: path-only vs full URL, sorted vs ordered query) or get the cassettes re-recorded in manza-ruby; never mock `fetch` per test (the other SDKs replay the same files).
 - **Public API breaks are deliberate.** A change that breaks the package's public API or its compatibility with the Manza API is made only on purpose, named in `CHANGELOG.md` and released as a major version.
 - **A trusted-publishing 404 means the binding drifted** (`(repo, workflow, environment)` must match exactly), or `setup-node`'s `registry-url` wrote `_authToken=` to `.npmrc` and skipped OIDC: drop `registry-url`, publish with `npx npm@latest publish`.
