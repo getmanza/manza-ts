@@ -17,6 +17,7 @@ interface Draft {
   account_id: string;
   external_account_id: string | null;
   destination_account_id: string | null;
+  transfer_method: string | null;
   authorization: Authorization | null;
 }
 
@@ -82,6 +83,7 @@ try {
     currency_code: draft.currency_code,
     account_id: draft.account_id,
     payee,
+    transfer_method: draft.transfer_method,
   });
 } catch (err) {
   abort(

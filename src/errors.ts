@@ -1,4 +1,4 @@
-// Mirrors lib/manza/errors.rb. Nine concrete error classes plus the
+// Mirrors lib/manza/errors.rb. Eleven concrete error classes plus the
 // abstract base. Discriminate via `instanceof`, not string match.
 
 export interface ManzaErrorOptions {
@@ -39,6 +39,30 @@ export class ManzaAuthenticationError extends ManzaError {}
 export class ManzaForbiddenError extends ManzaError {}
 export class ManzaNotFoundError extends ManzaError {}
 export class ManzaValidationError extends ManzaError {}
+// 422 with type "plan_limit_reached" — the entity's plan caps this kind
+// of record and the cap is reached. Retrying does not help until the
+// plan changes or the period rolls over. `kind` names what is capped
+// (e.g. "invoices"), `current` the count the entity holds and `max` the
+// cap.
+export class ManzaPlanLimitReachedError extends ManzaValidationError {
+  readonly kind: string | null;
+  readonly current: number | null;
+  readonly max: number | null;
+
+  constructor(
+    message: string,
+    options: ManzaErrorOptions & {
+      kind?: string | null;
+      current?: number | null;
+      max?: number | null;
+    } = {},
+  ) {
+    super(message, options);
+    this.kind = options.kind ?? null;
+    this.current = options.current ?? null;
+    this.max = options.max ?? null;
+  }
+}
 export class ManzaRateLimitError extends ManzaError {
   readonly retryAfter: number | null;
 

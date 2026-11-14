@@ -2,7 +2,8 @@
 //
 // Drives the example's authorizer handler directly with a signed copy of
 // the documented `payment.authorization_requested` payload (getmanza/app
-// WebhookEvents::PaymentAuthorizationRequested.example_payload, verbatim).
+// WebhookEvents::PaymentAuthorizationRequested.example_payload, verbatim,
+// with v2's `signature_input_v2` and `payment.transfer_method`).
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -42,12 +43,17 @@ const examplePayload = () => ({
       destination_account_id: null,
       payment_reference: "INV-2026-001",
       client_reference: "po_8812",
+      transfer_method: "eft" as string | null,
       payee_trusted: false as boolean | undefined,
     },
     signature_input:
       "manza.transfer-authorization.v1|01958e51-7c5a-7000-8000-000000000012|" +
       "9f86d081884c7d659a2feaa0c55ad015|2500.0|ZAR|01958e51-7c5a-7000-8000-000000000013|" +
       "ext:01958e51-7c5a-7000-8000-000000000014|po_8812",
+    signature_input_v2:
+      "manza.transfer-authorization.v2|01958e51-7c5a-7000-8000-000000000012|" +
+      "9f86d081884c7d659a2feaa0c55ad015|2500.0|ZAR|01958e51-7c5a-7000-8000-000000000013|" +
+      "ext:01958e51-7c5a-7000-8000-000000000014|po_8812|eft",
   },
 });
 
@@ -57,6 +63,7 @@ const LEDGER_ENTRY: LedgerEntry = {
   currency_code: "ZAR",
   account_id: "01958e51-7c5a-7000-8000-000000000013",
   payee: "ext:01958e51-7c5a-7000-8000-000000000014",
+  transfer_method: "eft",
 };
 
 const json = (status: number, body: unknown = {}, headers: Record<string, string> = {}) =>
@@ -166,10 +173,20 @@ describe("transfer authorizer example", () => {
       expect(log()).toContain("req_123");
     });
 
-    test("logs both signature inputs and does not authorize when the webhook's differs", async () => {
+    test("signs the webhook's v2 input", () => {
+      const input = TransferAuthorization.signatureInput({
+        ...LEDGER_ENTRY,
+        nonce: "9f86d081884c7d659a2feaa0c55ad015",
+        client_reference: "po_8812",
+      });
+
+      expect(input).toBe(examplePayload().data.signature_input_v2);
+    });
+
+    test("logs both signature inputs and does not authorize when the webhook's v2 input differs", async () => {
       const payload = examplePayload();
-      const original = payload.data.signature_input;
-      payload.data.signature_input = "something-else";
+      const original = payload.data.signature_input_v2;
+      payload.data.signature_input_v2 = "something-else";
 
       await deliver(JSON.stringify(payload));
 
@@ -284,6 +301,57 @@ describe("transfer authorizer example", () => {
 
         expect(callsTo(AUTHORIZE_URL)).toHaveLength(1);
       });
+    });
+  });
+
+  describe("with a transfer_method that differs from the ledger's", () => {
+    test("declines with a reason naming transfer_method", async () => {
+      ledger.record("po_8812", { ...LEDGER_ENTRY, transfer_method: "rtc" });
+      stub.on("POST", DECLINE_URL, json(200, { id: AUTHORIZATION_ID, status: "declined" }));
+
+      await deliver(JSON.stringify(examplePayload()));
+
+      expect(callsTo(DECLINE_URL)).toHaveLength(1);
+      expect(callsTo(DECLINE_URL)[0]?.body?.authorization_id).toBe(AUTHORIZATION_ID);
+      expect(String(callsTo(DECLINE_URL)[0]?.body?.reason)).toContain("transfer_method");
+      expect(callsTo(AUTHORIZE_URL)).toHaveLength(0);
+    });
+  });
+
+  // An entry the 1.x example wrote has no transfer_method: it reads as
+  // null, so it still matches a draft in a market with no rail choice.
+  describe("with a 1.x ledger entry and a draft whose transfer_method is null", () => {
+    test("authorizes, signing an empty transfer_method segment", async () => {
+      const { transfer_method: _dropped, ...v1Entry } = LEDGER_ENTRY;
+      ledger.record("po_8812", v1Entry as LedgerEntry);
+      stub.on("POST", AUTHORIZE_URL, json(200, { status: "processing" }));
+      const payload = examplePayload();
+      payload.data.payment.transfer_method = null;
+      payload.data.signature_input_v2 = payload.data.signature_input_v2.replace(/eft$/, "");
+
+      await deliver(JSON.stringify(payload));
+
+      const input = TransferAuthorization.signatureInput({
+        ...LEDGER_ENTRY,
+        transfer_method: null,
+        nonce: "9f86d081884c7d659a2feaa0c55ad015",
+        client_reference: "po_8812",
+      });
+      expect(callsTo(AUTHORIZE_URL)).toHaveLength(1);
+      expect(callsTo(AUTHORIZE_URL)[0]?.body?.signature).toBe(
+        await TransferAuthorization.sign({ secret: SECRET, signature_input: input }),
+      );
+    });
+
+    test("declines a draft that carries a transfer_method", async () => {
+      const { transfer_method: _dropped, ...v1Entry } = LEDGER_ENTRY;
+      ledger.record("po_8812", v1Entry as LedgerEntry);
+      stub.on("POST", DECLINE_URL, json(200));
+
+      await deliver(JSON.stringify(examplePayload()));
+
+      expect(callsTo(AUTHORIZE_URL)).toHaveLength(0);
+      expect(String(callsTo(DECLINE_URL)[0]?.body?.reason)).toContain("transfer_method");
     });
   });
 

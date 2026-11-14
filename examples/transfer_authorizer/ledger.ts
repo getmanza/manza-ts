@@ -5,7 +5,7 @@
 //
 //   { "po_8812": { "payment_id": "...", "amount": "2500.0",
 //                  "currency_code": "MAD", "account_id": "...",
-//                  "payee": "ext:..." } }
+//                  "payee": "ext:...", "transfer_method": "standard" } }
 
 import { existsSync, linkSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 
@@ -15,6 +15,9 @@ export interface LedgerEntry {
   currency_code: string;
   account_id: string;
   payee: string;
+  // The create response's (null where the market offers no choice): the
+  // v2 signature signs it.
+  transfer_method: string | null;
 }
 
 const LOCK_TIMEOUT_MS = 5_000;

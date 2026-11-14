@@ -38,6 +38,7 @@ const CHECKED_FIELDS = [
   ["currency_code", "currency_code"],
   ["account_id", "account_id"],
   ["payee", "payee"],
+  ["transfer_method", "transfer_method"],
 ] as const;
 
 // Failures worth another try: the API did not answer, asked us to slow
@@ -89,6 +90,7 @@ interface Payment {
   account_id: string;
   payee: string;
   client_reference: string;
+  transfer_method?: string | null;
   payee_trusted?: boolean | null;
   [field: string]: unknown;
 }
@@ -96,7 +98,7 @@ interface Payment {
 interface ChallengeData {
   payment: Payment;
   authorization: { id: string; nonce: string };
-  signature_input: string;
+  signature_input_v2: string;
 }
 
 const consoleLogger: Logger = {
@@ -166,7 +168,12 @@ export function createAuthorizer(options: AuthorizerOptions): AuthorizerHandler 
       logger.info(
         `ledger match for ${clientReference}: ${payment.amount} ${payment.currency_code} to ${payment.payee}`,
       );
-      await authorize(entry as LedgerEntry, authorization, clientReference, data.signature_input);
+      await authorize(
+        entry as LedgerEntry,
+        authorization,
+        clientReference,
+        data.signature_input_v2,
+      );
     } catch (err) {
       if (err instanceof ManzaError) {
         logger.error(
@@ -188,9 +195,11 @@ export function createAuthorizer(options: AuthorizerOptions): AuthorizerHandler 
     }
   }
 
+  // A missing field reads as null: an entry the 1.x example wrote has no
+  // transfer_method, and still matches a draft whose transfer_method is null.
   function mismatchReason(entry: LedgerEntry, payment: Payment): string | null {
     const field = CHECKED_FIELDS.find(([ledgerField, webhookField]) => {
-      return entry[ledgerField] !== payment[webhookField];
+      return (entry[ledgerField] ?? null) !== (payment[webhookField] ?? null);
     });
     if (!field) return null;
 
@@ -198,8 +207,9 @@ export function createAuthorizer(options: AuthorizerOptions): AuthorizerHandler 
     return `${ledgerField} differs from the ledger (ledger ${show(entry[ledgerField])}, webhook ${show(payment[webhookField])})`;
   }
 
-  // Sign from the ledger, never from the webhook: `signature_input` in the
-  // webhook is only there to compare against.
+  // Sign from the ledger, never from the webhook: `signature_input_v2` in
+  // the webhook is only there to compare against. (Its `signature_input`
+  // is the v1 string, for clients pinned to Manza-Version 2026-03-27.)
   async function authorize(
     entry: LedgerEntry,
     authorization: ChallengeData["authorization"],
@@ -214,6 +224,7 @@ export function createAuthorizer(options: AuthorizerOptions): AuthorizerHandler 
       account_id: entry.account_id,
       payee: entry.payee,
       client_reference: clientReference,
+      transfer_method: entry.transfer_method ?? null,
     });
     // A signature over a different input is sure to fail, and failed
     // attempts count toward suspending the authorizer. Leave the challenge

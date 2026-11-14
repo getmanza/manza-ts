@@ -11,6 +11,7 @@ import {
   ManzaError as ManzaErrorBase,
   ManzaForbiddenError,
   ManzaNotFoundError,
+  ManzaPlanLimitReachedError,
   ManzaRateLimitError,
   ManzaServerError,
   ManzaValidationError,
@@ -174,6 +175,9 @@ interface ErrorPayload {
   type?: string;
   param?: string;
   payment_id?: string;
+  kind?: string;
+  current?: number;
+  max?: number;
 }
 
 function errorPayload(body: unknown): ErrorPayload {
@@ -194,6 +198,15 @@ function buildError(response: ManzaResponse): ManzaError {
     body: response.body,
     headers: response.headers,
   };
+
+  if (response.status === 422 && payload.type === "plan_limit_reached") {
+    return new ManzaPlanLimitReachedError(message ?? "Plan limit reached", {
+      ...opts,
+      kind: payload.kind ?? null,
+      current: payload.current ?? null,
+      max: payload.max ?? null,
+    });
+  }
 
   switch (response.status) {
     case 400:

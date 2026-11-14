@@ -13,6 +13,7 @@ const ENTRY = {
   currency_code: "MAD",
   account_id: "a1",
   payee: "ext:e1",
+  transfer_method: "standard",
 };
 
 describe("transfer authorizer example files", () => {

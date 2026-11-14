@@ -3,13 +3,18 @@
 // The `payment.authorization_requested` webhook delivers the
 // authorization id and a one-time nonce. Build the signature input
 // from your own record of the transfer (not the webhook's
-// signature_input, which is there only to compare against), sign it
+// signature_input_v2, which is there only to compare against), sign it
 // with the authorizer endpoint's signing secret, and pass the result
 // to Payments#authorize.
+//
+// This is the v2 input, which the API verifies for every request that
+// is unpinned or sends `Manza-Version: 2026-11-13` or later. A client
+// pinned to `Manza-Version: 2026-03-27` must sign v1 and stays on
+// @getmanza/sdk 1.x.
 
 import { ManzaArgumentError } from "./errors.js";
 
-export const SIGNATURE_VERSION = "manza.transfer-authorization.v1";
+export const SIGNATURE_VERSION = "manza.transfer-authorization.v2";
 
 export interface SignatureInputFields {
   payment_id: string;
@@ -21,6 +26,10 @@ export interface SignatureInputFields {
   account_id: string;
   payee: string;
   client_reference?: string | null | undefined;
+  // The payment's rail as the API stores it (the create response's
+  // `transfer_method`): required, and null (signed as an empty segment)
+  // where the market offers no choice.
+  transfer_method: string | null;
 }
 
 export interface PayeeForParams {
@@ -34,6 +43,13 @@ export function signatureInput(fields: SignatureInputFields): string {
       `amount must be the API's decimal string (got ${JSON.stringify(fields.amount)})`,
     );
   }
+  // A v1 call fails here rather than as a failed signature at the API,
+  // where five of them fail the challenge.
+  if (fields.transfer_method === undefined) {
+    throw new ManzaArgumentError(
+      "transfer_method is required (null where the market offers no choice)",
+    );
+  }
   return [
     SIGNATURE_VERSION,
     fields.payment_id,
@@ -43,6 +59,7 @@ export function signatureInput(fields: SignatureInputFields): string {
     fields.account_id,
     fields.payee,
     fields.client_reference ?? "",
+    fields.transfer_method ?? "",
   ].join("|");
 }
 
