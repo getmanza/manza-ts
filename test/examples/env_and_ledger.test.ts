@@ -62,6 +62,15 @@ describe("transfer authorizer example files", () => {
     expect(new Ledger(path).find("po_1")).toEqual({ ...v1Entry, transfer_method: null });
   });
 
+  test("the ledger reads a null entry as not in the ledger, and the others still", () => {
+    const path = join(dir, "ledger.json");
+    writeFileSync(path, JSON.stringify({ po_1: null, po_2: ENTRY }));
+    const ledger = new Ledger(path);
+
+    expect(ledger.find("po_1")).toBeNull();
+    expect(ledger.find("po_2")).toEqual(ENTRY);
+  });
+
   test("the ledger finds only entries it recorded, whatever the key", () => {
     const ledger = new Ledger(join(dir, "ledger.json"));
     ledger.record("__proto__", ENTRY);

@@ -31,8 +31,8 @@ release: see Migrating from 1.x below.
   `manza.transfer-authorization.v2|payment_id|nonce|amount|currency_code|account_id|payee|client_reference|transfer_method`.
   Leaving it out fails to compile, and throws `ManzaArgumentError` from
   plain JavaScript, before anything is sent. The API verifies v2 for
-  every request that is unpinned or sends `Manza-Version: 2026-11-13`;
-  only `2026-03-27` still verifies v1. Pass the payment's
+  every request that is unpinned or sends `Manza-Version: 2026-11-13` or
+  later; only `2026-03-27` still verifies v1. Pass the payment's
   `transfer_method` as the API returned it.
 - The example authorizer (`examples/transfer_authorizer`) records the
   create response's `transfer_method` in its ledger, checks it against the

@@ -343,6 +343,27 @@ describe("transfer authorizer example", () => {
       );
     });
 
+    test("authorizes a webhook that carries no transfer_method at all", async () => {
+      const { transfer_method: _dropped, ...v1Entry } = LEDGER_ENTRY;
+      ledger.record("po_8812", v1Entry as LedgerEntry);
+      stub.on("POST", AUTHORIZE_URL, json(200, { status: "processing" }));
+      const payload = examplePayload();
+      const { transfer_method: _none, ...payment } = payload.data.payment;
+      const body = {
+        ...payload,
+        data: {
+          ...payload.data,
+          payment,
+          signature_input_v2: payload.data.signature_input_v2.replace(/eft$/, ""),
+        },
+      };
+
+      await deliver(JSON.stringify(body));
+
+      expect(callsTo(DECLINE_URL)).toHaveLength(0);
+      expect(callsTo(AUTHORIZE_URL)).toHaveLength(1);
+    });
+
     test("declines a draft that carries a transfer_method", async () => {
       const { transfer_method: _dropped, ...v1Entry } = LEDGER_ENTRY;
       ledger.record("po_8812", v1Entry as LedgerEntry);

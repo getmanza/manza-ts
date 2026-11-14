@@ -65,7 +65,8 @@ export class Ledger {
     for (const [key, entry] of Object.entries(JSON.parse(json) as Record<string, LedgerEntry>)) {
       // An entry the 1.x example wrote has no transfer_method: it reads as
       // null, so it still matches a draft in a market with no rail choice.
-      entries[key] = { ...entry, transfer_method: entry.transfer_method ?? null };
+      // A null entry stays null: not in the ledger.
+      entries[key] = entry && { ...entry, transfer_method: entry.transfer_method ?? null };
     }
     return entries;
   }
